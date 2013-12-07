@@ -129,13 +129,16 @@ def spokenFraction(d):
 	#compare to existing list
 	#otherwise regex existing list, list all matches, concoct... largest match? Mostly white? Adjectives?
 
-#def describeCharacter(class instance):
+#def describeCharacter(char):
 	#get missing data from FListAPI
 		#which should scrape profiles that don't let API access. ;)
 	#complete class instance. if the char's in the channel, add to self.users (otherwise we'll have all of FList downloaded soon. :V)
 
 def timeOfDay():
 	return ["night", "morning", "afternoon", "evening"][datetime.datetime.now().hour//6]
+	
+def termOfAddress(char):
+	pass
 #---------------------------------------------------------------
 	
 class Personality():

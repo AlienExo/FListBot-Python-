@@ -39,4 +39,30 @@ pip-log.txt
 # cogito
 #
 
-config.py
+*.pyc
+documentation/
+2test.py
+banter.txt
+data/Cogito messages.yml
+data/Cogito stats.yml
+data/whitelist.yml
+elements.txt
+loader4proto.py
+logs/Cogito errors.log
+logs/Cogito verbose.log
+new  2.txt
+new  3.txt
+personalities/bartender/LINES test.txt
+personalities/bartender/elements.txt
+personalities/bartender/new  2
+personalities/bartender/new  2.txt
+plugins/TEMPLATE.py
+plugins/modified calc frac time.txt
+plugins/new  2.txt
+plugins/quickTEMPLATE.py
+rest.txt
+rgb.txt
+selflessloader.py
+speech0.mp3
+zalgo.py
+data/user stats.txt

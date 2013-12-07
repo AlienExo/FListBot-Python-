@@ -101,6 +101,7 @@ class User():
 			d = threads.deferToThread(FListAPI.getCharInfo(self.name))
 			d.addCallback(userFromFListData)
 			d.addCallback(object.__getattribute__(self, item))
+			return d
 			#data = reactor.callFromThread(FListAPI.getCharInfo, name)
 			#reactor.callInThread(getUserData(self, self.name))
 			
@@ -645,7 +646,11 @@ class FListCommands(threading.Thread):
 			reply("[color=green]Message to {} saved.[/color]".format(recipient), 2)
 			
 	def say(self, msg, route=2):
-		sendText(msg.params, 2, chan=config.channels[0])
+		sendText(msg.params, route, chan=config.channels[0])
+		
+	def act(self, msg, route=3):
+		sendText(msg.params, route, chan=config.channels[0])
+		
 
 	
 
