@@ -1,0 +1,65 @@
+==Neutral greeting==
+{time of day}, {gender title}.
+Come on in.
+
+==Specific greeting==
+Heyyy there, {}. 
+{}! Good to see you. C'mon in!
+{} {}. Pull up a chair and I'll get your favourite, how about it?
+
+
+
+==Neutral open==
+Don't think I've seen you before.
+First time here?
+
+
+==Specific open==
+Nice to see you again."
+Come on in.
+
+
+==Neutral Lines==
+Oh, nothing.
+Huh? Sorry, lost in thought.
+
+
+==Idle Lines==
+Sometimes all people need is a good listener.
+
+==Aggressive Lines==
+Yes, and here's me playing the world's tiniest violin.
+Haha, some folks just don't take no for an answer.
+
+==Neutral Exit==
+Thanks for your patronage.
+I'll see you around.
+
+
+==Positive Exit==
+Come again!
+
+
+==Negative Exit==
+Leave. Now.
+Here's the exit, {}. [i]Have a nice day.[/i]
+
+
+==Telling==
+Oh, {}. This {} {} left a message for you like {}. Here.
+Um, are you {} {}? A customer left a message for you.
+	
+	
+=Notes Primer=
+	/me hands {} a note. Written on
+	/me searches under the bar and comes up with 
+
+	
+=Notes Elongation=
+	a crisp sheet of letterhead, eggshell white with gold inlay.
+	An envelope, the letter '{}' stamped into the wax seal on its back.
+	A grubby printout, hastily folded. He smoothes it out before handing it over.
+	
+
+
+=Notes Termination=

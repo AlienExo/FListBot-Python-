@@ -1,0 +1,2 @@
+.help: ['Displays this message. Use .help <command> to recall a specific entry, e.g.
+    .help .b']
