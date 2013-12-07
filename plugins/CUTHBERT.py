@@ -11,7 +11,7 @@ modules = ['traceback', 'random', 're']
 request = re.compile('(could|can|would|might)(.*you)?(.*please)?(\?)?')
 name = re.compile('({})[.,!\?:]?\s?'.format(character))
 talk=	[	("I need help|please help me|can you help me", ["Being as you know absolutely FUCK ALL, I suggest you try UBUNTU!"], 'boudoir'),
-			('(could|can|would|might)?(you)?(please)\??|(could|can|would|might)?(you)?(please)\??',["FRAK OFF YOU FRELLING CUNT!", "NO YOU IDIOT IT IS NOT MY FAULT. THIS KEYBOARD IS NOT RESPONSIVE ENOUGH. AND THE FRICTION ON THIS MOUSE MAT IS BORKED. WHAT I NEED IS A NEW RIG!"], 'req'),
+			('(could|can|would|might)?(you)?(please|kindly)\??|(could|can|would|might)?(you)?(please|kindly)\??',["FRAK OFF YOU FRELLING CUNT!", "NO YOU IDIOT IT IS NOT MY FAULT. THIS KEYBOARD IS NOT RESPONSIVE ENOUGH. AND THE FRICTION ON THIS MOUSE MAT IS BORKED. WHAT I NEED IS A NEW RIG!"], 'req'),
 			('.*(shut up|be quiet|pipe down).*',["YOU ARE A BUNCH OF FUCKING IDIOTS! IDIOTS!", "DeForest Kelley, you really are an utter pleb, aren't you?"], 'shutup'),
 			("(how (are you|do you (feel|fare)|('s it |is it) going))|(how)\s?(are you| do you (feel|fare)|('s it |is it )going)",["I have been using the publicly available wifi in this Starbucks to criticise someone's grammar, and it's made me feel like a FUCKING GOD. A FUCKING GOD, CUTHBERT. Like an all-seeing, raging typhoon of all-knowing genius that should make all men tremble in reverence!"], 'feel'),
 			("is|are.*(stinky|smelly|mean|dumb|stupid|ugly|dick|ass|idiot)", ['FUCKING CUNTS! USELESS FUCKING IDIOTS! YOU\'VE RUINED IT! YOU\'VE RUINED EVERYTHING!'], 'insult'),

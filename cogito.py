@@ -6,6 +6,8 @@
 #DataPipe or FListProtocol might need a dummy sendRaw() and sendMessage() because otherwise any functions trying to access those won't find the global ones, since most plugin/personality calls are from inside the class.
 	#test with eightball.py
 	
+#make an allAdmins list so that you don't iterate over ALL users on every status chage?
+	
 #rainbowshit [color=red][/color][color=orange][/color][color=yellow][/color][color=green][/color][color=cyan][/color][color=blue][/color][color=purple][/color]
 	
 import config
@@ -39,6 +41,7 @@ recvQueue 		= Queue.Queue()
 EventQueue 		= Queue.Queue()
 
 admins 			= utils.loadData('admins', list)
+allAdmins		= []
 banBanter		= utils.loadData('banbanter', list)
 funcBanter		= utils.loadData('funcbanter', list)
 joinmsgDict 	= utils.loadData('joinmsg', dict)
@@ -323,6 +326,7 @@ def checkAge(age, char, chan):
 			for x in xadmins:
 				if x in chanusers:
 					if x in datapipe.ignorelist: continue
+					if x.status in ['busy', 'dnd']: continue
 					print("\tAdministrator found: {}".format(x))
 					sendText("Cannot automatically determine age of user '{}'. Please verify manually [url=http://www.f-list.net/c/{}]here[/url]. To add user to whitelist, tell me '.white {}', in the channel to whitelist the user for.".format(char.name, quote_plus(char.name), char.name), 0, x)
 					return
@@ -367,6 +371,7 @@ class FListCommands(threading.Thread):
 		for op in ops:
 			if not op in chan.ops: 
 				chan.ops.append(str(op))
+				allAdmins.append(str(op))
 		chan = getChannel(chan)
 		print ("Channel operators for "+chan.name +": "+ str(chan.ops))
 		
@@ -378,11 +383,13 @@ class FListCommands(threading.Thread):
 		chan = getChannel(item.args['channel'])
 		char = getUser(item.args['channel'])
 		if not char.name in chan.ops:
-			chan.ops.append(item.args['character'])
+			chan.ops.append(char.name)
+			allAdmins.append(char.name)
 
 	def COR(self, item):
 		chan = getChannel(item.args['channel'])
 		chan.ops.remove(item.args['character'])
+		allAdmins.remove(item.args['character'])
 		
 	def ERR(self, item):
 		try: utils.log("ERROR: {}".format(item.args))
@@ -441,7 +448,10 @@ class FListCommands(threading.Thread):
 					
 	def PIN(self, item): sendRaw("PIN")
 	
-	def STA(self, item): pass
+	def STA(self, item):
+		char = getUser(item.args['character'])
+			if char.name in allAdmins:
+				char.status = item.args['status']			
 	
 	def SYS(self, item):
 		utils.log(item.args['message'])
@@ -691,11 +701,8 @@ def parseText(self, msg):
 				if msg.source.character.name in datapipe.admins: msg.cf_level=0
 				elif (msg.source.character.name in msg.source.channel.ops): msg.cf_level = 1
 				elif msg.source.channel.name == 'private': 
-					for x in datapipe.channelDict:
-						print x, type(x)
-						if isinstance(x, Channel):
-							if msg.source.character.name in x.ops:
-								msg.cf_level = 1
+					if msg.source.character.name in allAdmins:
+						msg.cf_level = 1
 				else: msg.cf_level = 2
 				#print msg.source.character.name, msg.source.channel.ops, datapipe.admins, msg.cf_level, msg.source.character.name in msg.source.channel.ops, msg.source.character.name in datapipe.admins
 				if msg.cf_level <= func_params[1]:
