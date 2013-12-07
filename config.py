@@ -13,7 +13,7 @@ minage = 13
 channels=	['CHANNEL 1']
 #channels=	['Development']
 # admins defines who can issue admin-level commands to the bot. Looks like this:
-# admins = ["first name", "secondname", "THirdNAme"]
+# admins = ["First Admin", "second admin", "xXx third admin-dono xXX"]
 #please be precise, else python pukes up an error. TIA. 
 admins = 	["ADMINS"]
 
@@ -28,65 +28,31 @@ bashlim = 	15
 ignore_commands = ['FLN', 'STA', 'NLN', 'PIN', 'MSG', 'PRI', 'TPN', 'LIS', 'ORS', 'IDN', 'VAR', 'CDS', 'COL', 'ICH', 'JCH', 'LCH']
 
 
-#Format: Command : function. Is called for getattr().
-cf_list = {	
-					"EXEC_HIBERNATION":"hibernation",
-					".help":"help",
-					".tell":"tell",
-					".op":"op",
-					".deop":"deop",
-					".k":"kick",
-					".b":"ban",
-					".white":"whitelist",
-					".black":"blacklist",
-					".lj":"lastJoined",
-					".r":"rainbow",
-					".s":"say",
-					".a":"act",
-					".kick":"kick",
-					".ban":"ban",
-					".leave":"leave",
-					".join":"join"
+#Format: Command : (function_name, level required for access, message type required for access.)
+#levels: 
+	#2 - normal user. 
+	#1 - channel admin/chat admin. 
+	#0 - admin defined above, in config.py
+#message types: 
+	#0: private message
+	#1: in-channel
+	#2: in-channel, mentioning config.character; e.g. Cogito: <function>
+functions = {	
+					"EXEC_HIBERNATION":	("hibernation",	1, [0,1]),
+					".help":			("help", 		2, [0,1]),
+					".tell":			("tell", 		2, [0,1]),
+					".op":				("op", 			1, [0,1]),
+					".deop":			("deop", 		1, [0,1]),
+					".k":				("kick", 		1, [0,1]),
+					".b":				("ban", 		1, [0,1]),
+					".white":			("whitelist",	1, [0,1]),
+					".black":			("blacklist",	1, [0,1]),
+					".lj":				("lastJoined",	1, [0]),
+					".r":				("rainbowText",	1, [0,1]),
+					".s":				("say",			1, [0,1]),
+					".a":				("act",			1, [0,1]),
+					".kick":			("kick",		1, [0,1]),
+					".ban":				("ban",			1, [0,1]),
+					".leave":			("leave",		1, [0,1]),
+					".join":			("join",		1, [0,1])
 					}
-					
-#lvl 1 - need admin nick | lvl 2 - free access.
-cf_levels = {		'EXEC_HIBERNATION'				:1,
-					'.help'							:2,
-					'.tell'							:2,
-					'.op'							:1,
-					'.deop'							:1,
-					'.k'							:1,
-					'.b'							:1,
-					'.black'						:1,
-					'.white'						:1,
-					'.lj'							:1,
-					'.r'							:1,
-					'.s'							:1,
-					'.a'							:1,
-					'.join'							:1,
-					'.leave'						:1,
-					'.kick'							:1,
-					'.ban'							:1
-					}	
-					
-#lvl 0 - direct message only | lvl 1 - channel and nick | lvl 2 - channel
-cf_access_types = 	{
-					'EXEC_HIBERNATION'				:[0,1],
-					'.help'							:[0,1],
-					'.tell'							:[0,1],
-					'.op'							:[0,1],
-					'.deop'							:[0,1],
-					'.k'							:[0,1],
-					'.b'							:[0,1],
-					'.black'						:[0,1],
-					'.white'						:[0,1],
-					'.lj'							:[0],
-					'.r'							:[0,1],
-					'.s'							:[0,1],
-					'.a'							:[0,1],
-					'.join'							:[0,1],
-					'.leave'						:[0,1],
-					'.kick'							:[0,1],
-					'.ban'							:[0,1]
-					}			
-

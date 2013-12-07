@@ -152,9 +152,7 @@ class DataPipe():
 		#self.usersDict 		= utils.loadData('users', dict)
 		self.whitelist		= utils.loadData('whitelist', list)
 		self.admins 		= config.admins + admins
-		self.cf_access_types= config.cf_access_types
-		self.cf_levels 		= config.cf_levels
-		self.cf_list 		= config.cf_list
+		self.functions		= config.functions
 		self.pluginexit		= []
 		self.pluginloops	= []
 		self.channelDict	= {}
@@ -559,7 +557,7 @@ class FListCommands(threading.Thread):
 			
 	def unban(self, item):pass
 	
-	def rainbow(self, item):
+	def rainbowText(self, item):
 		slist=[]
 		a = len(item.params)
 		b = a//6
@@ -675,7 +673,7 @@ def parseText(self, msg):
 	if not msg.params[:3]=="/me":print ( "{} -- {} ({}): \"{}\"".format(time.strftime("%c"), msg.source.character.name, msg.source.channel.name, msg.params))
 	else: print ( "{} -- {}{}".format(time.strftime("%c"), msg.source.character.name, msg.params[3:]))
 	try:
-		if msg.args[0] in datapipe.cf_list.keys():
+		if msg.args[0] in datapipe.functions.keys():
 			#print ("\tCommand '{}' recognized.".format(msg.args[0]))
 			func = msg.args[0]
 			msg.args = msg.args[1:]
@@ -687,7 +685,8 @@ def parseText(self, msg):
 				msg.access_type = 1
 			#print msg.access_type,  msg.access_type in datapipe.cf_access_types[func], msg.source.channel.name, msg.source.character.name
 			# 0 - priv, 1 - chan, 2 - chan, nick 
-			if msg.access_type in datapipe.cf_access_types[func]:
+			func_params = datapipe.functions[func]
+			if msg.access_type in func_params[2]:
 				print("\t\tCorrect access type")
 				if msg.source.character.name in datapipe.admins: msg.cf_level=0
 				elif (msg.source.character.name in msg.source.channel.ops): msg.cf_level = 1
@@ -699,9 +698,9 @@ def parseText(self, msg):
 								msg.cf_level = 1
 				else: msg.cf_level = 2
 				#print msg.source.character.name, msg.source.channel.ops, datapipe.admins, msg.cf_level, msg.source.character.name in msg.source.channel.ops, msg.source.character.name in datapipe.admins
-				if msg.cf_level <= datapipe.cf_levels[func]:
+				if msg.cf_level <= func_params[1]:
 					print ("\t\t\tHanding ALL the things.")
-					handle_all_the_things(self, msg, datapipe.cf_list[func])
+					handle_all_the_things(self, msg, func_params[0])
 	except IndexError:
 		traceback.print_exc()
 		
