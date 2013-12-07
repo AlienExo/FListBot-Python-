@@ -320,16 +320,17 @@ def checkAge(age, char, chan):
 		#	char.kick(chan)
 		elif char.age ==0:
 			chanusers = getChannel(chan).users
-			print("\tAssistance required.")
+			print("\tCannot parse.")
 			chan.userJoined(char.name)
 			xadmins = sorted(chan.ops, key=lambda *args: random.random())
 			for x in xadmins:
 				if x in chanusers:
 					if x in datapipe.ignorelist: continue
 					if x.status in ['busy', 'dnd']: continue
-					print("\tAdministrator found: {}".format(x))
-					sendText("Cannot automatically determine age of user '{}'. Please verify manually [url=http://www.f-list.net/c/{}]here[/url]. To add user to whitelist, tell me '.white {}', in the channel to whitelist the user for.".format(char.name, quote_plus(char.name), char.name), 0, x)
-					return
+					else:
+						print("\tAdministrator found: {}".format(x))
+						sendText("Cannot automatically determine age of user '{}'. Please verify manually: [url=http://www.f-list.net/c/{}]here[/url]. [sub]To add user to whitelist, tell me '.white {}', in the channel to whitelist the user for.[/sub]".format(char.name, quote_plus(char.name), char.name), 0, x)
+						return
 		else:
 			print("\tUser {} has passed inspection (Age>{}), claiming to be {} years old.".format(char.name, config.minage, char.age))
 			#sendText("Demonstration: User {} has passed inspection (Age>{}), being {} years old. Apparently.".format(char.name, config.minage, char.age), 0, 'Valorin Petrov')
