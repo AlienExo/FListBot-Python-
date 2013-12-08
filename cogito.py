@@ -765,7 +765,7 @@ def handle_all_the_things(self, msgobj, cmd=None):
 		elif datapipe.personality!=None:
 			func = getattr(datapipe.personality.code, cmd, None)
 			if callable(func):
-				func(self, msgobj)
+				func(datapipe, msgobj)
 		else:
 			func = getattr(FListCommands, '{}'.format(cmd), None)
 			if callable(func):
@@ -866,6 +866,10 @@ def mainloop():
 		#	except Queue.Empty: pass
 		#	except Exception: traceback.print_exc()
 		#takes a Message instance off the Queue.
+		
+		#Like, (Person who talked to you, function to call when you hear them again, condition to remove this part of the stack)
+		#EventQueue?
+		
 		item, self = recvQueue.get_nowait()
 		datapipe.source = item.source
 		if item.cmd not in config.ignore_commands: print("{} -- {} {}".format(time.strftime("%c"), item.cmd, item.args))

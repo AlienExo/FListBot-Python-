@@ -41,13 +41,15 @@ date = re.compile('(?P<day>\d{1,2})(\s)*(.|(st|nd|rd|th))?(\s)*(?P<month>(\d{1,2
 
 def horoscope(self, msgobj):
 	day, month = date.search(msgobj.params).group('day', 'month')
+	print day, month
 	day = int(day)
 	try:
 		month = int(month)
 	except ValueError:
+		month = month.capitalize()
 		FLAG = False
 		for x in months:
-			if x == month.capitalize():
+			if x == month:
 				month = months.index(x)+1
 				FLAG = True
 		if not FLAG:	

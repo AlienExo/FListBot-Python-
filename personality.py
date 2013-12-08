@@ -181,7 +181,6 @@ def __init__(config):
 		for number, item in enumerate(personalities):
 			choices[number+1]=item
 			print ("\t{}\t{}".format(number+1, item))
-		print("\tEND OF PERSONALITIES\n")
 		choice = raw_input("Choose a personality by number (Press Enter for none): ")
 		try:
 			if choice == '':

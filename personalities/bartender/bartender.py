@@ -9,14 +9,18 @@ import FListAPI
 import random
 import utils
 
+lines = utils.loadData('bartender', dict, './personalities/bartender/')
+
 def JCH(datapipe, msgobj):
 	if msgobj.source.character.name!=config.character:
+		line = eval(random.choice(lines['join']))
 		if random.random<0.6:
 			FList.say("Bartender Personality JCH! Welcome, new user.")
 	
 
-def __init__(lines):
+def __init__(datapipe):
 	print("\tBartender personality successfully loaded. HERE WE GO!")
+	#datapipe.personality.lines = utils.loadData('bartender', '\personalities\bartender\\')
 
 def test():
 	print("\tBartender.py successfully called test()")
@@ -29,7 +33,7 @@ def telling(datapipe, msgobj):
 		userdata=FList.users[recipient]
 	else:
 		userdata = FListAPI.getCharData(recipient)
-	line = random.choice(lines['telling']).format()
+	line = eval(random.choice(lines['telling']))
 	FList.say(line)
 	
 	for num, item in enumerate(messages):
