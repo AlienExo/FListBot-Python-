@@ -3,6 +3,7 @@ import traceback
 import random
 import re
 months=['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+days=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 mon_len={1:0, 2:32, 3:60, 4:91, 5:121, 6:152, 7:182, 8:213, 9:243, 10:274, 11:305, 12:335}
 
 """
@@ -36,7 +37,7 @@ Capricorn	357-365
 
 signs=[(20,'Capricorn'), (50,'Aquarius'), (79,'Pisces'), (110,'Aries'), (141,'Taurus'), (172,'Gemini'), (202,'Cancer'), (234,'Leo'), (266,'Virgo'), (296,'Libra'), (326,'Scorpio'), (356,'Sagittarius'), (366,'Capricorn')]
 
-date = re.compile('(?P<day>\d{1,2})(.|(st|nd|rd|th))?(\s)*(?P<month>(\d{1,2}|\w{3,9}))')
+date = re.compile('(?P<day>\d{1,2})(\s)*(.|(st|nd|rd|th))?(\s)*(?P<month>(\d{1,2}|\w{3,9}))')
 
 def horoscope(self, msgobj):
 	day, month = date.search(msgobj.params).group('day', 'month')
@@ -46,11 +47,11 @@ def horoscope(self, msgobj):
 	except ValueError:
 		FLAG = False
 		for x in months:
-			if x == month:
+			if x == month.capitalize():
 				month = months.index(x)+1
 				FLAG = True
 		if not FLAG:	
-			self.say("Unable to parse '{}' as month. Syntax: .hs DD.MM".format(month), 0)
+			self.reply("Unable to parse '{}' as month. Syntax: .hs DD.MM".format(month), 0)
 	day=day+mon_len[month]
 	for x in signs:
 		if abs(day-x[0])<31:
@@ -67,7 +68,9 @@ def horoscope(self, msgobj):
 		else: check = True
 	horoscope = ' '.join(horoscope)
 	horoscope = horoscope.replace('{NAME}', random.choice(msgobj.source.channel.users))
+	horoscope = horoscope.replace('{DAY}', random.choice(days))
 	horoscope = horoscope.replace('{SIGN}', sign)
+
 	self.reply("[{}]: {}".format(sign, horoscope), 1)
 	
 def __init__(self):
