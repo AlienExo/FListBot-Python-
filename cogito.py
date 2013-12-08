@@ -170,11 +170,11 @@ class DataPipe():
 		self.success_flag 		= False
 		self.personality	= None
 		
-	def loadData(self, file, expected=dict, path='./data/'):
-		utils.loadData(file, expected=dict, path='./data/')
+	def loadData(self, file, expected=dict):
+		return utils.loadData(file, expected=dict)
 		
-	def saveData(self, data, file, path='./data/'):
-		utils.saveData(data, file, path='./data/')
+	def saveData(self, data, file):
+		utils.saveData(data, file)
 
 	def reply(self, message, route):
 		reply(message, route)
@@ -399,8 +399,10 @@ class FListCommands(threading.Thread):
 		allAdmins.remove(item.args['character'])
 		
 	def ERR(self, item):
-		try: utils.log("ERROR: {}".format(item.args))
-		except:	pass
+		utils.log("ERROR: {}".format(item.args))
+		if item.args['message']=='This command requires that you have logged in.':
+			sys.exit(1)
+			
 		
 	def FLN(self, item): pass		
 	def FRL(self, item): pass
@@ -713,7 +715,7 @@ def parseText(self, msg):
 				else: msg.cf_level = 2
 				#print msg.source.character.name, msg.source.channel.ops, datapipe.admins, msg.cf_level, msg.source.character.name in msg.source.channel.ops, msg.source.character.name in datapipe.admins
 				if msg.cf_level <= func_params[1]:
-					print ("\t\t\tHanding '{}' the things.".format(func_params))
+					print ("\t\t\tHandling '{}'...".format(func_params[0]))
 					handle_all_the_things(self, msg, func_params[0])
 	except IndexError:
 		traceback.print_exc()
@@ -764,7 +766,7 @@ def handle_all_the_things(self, msgobj, cmd=None):
 		if cmd in datapipe.plugins:
 			func = getattr(datapipe.plugins[cmd], cmd, None)
 			if callable(func):
-				func(self, msgobj)
+				func(datapipe, msgobj)
 		elif datapipe.personality!=None:
 			func = getattr(datapipe.personality.code, cmd, None)
 			if callable(func):
@@ -895,6 +897,5 @@ if __name__ == '__main__':
 		MainLoop.start(0.25)
 		reactor.run()
 	except:
-		reactor.stop()
 		reactor.stop()
 		traceback.print_exc()

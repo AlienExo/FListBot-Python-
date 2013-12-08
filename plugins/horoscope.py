@@ -58,17 +58,17 @@ def horoscope(self, msgobj):
 	
 	horoscope = []
 	for x in range(2):
-		horoscope.append(random.choice(datapipe.horoscopes))
+		horoscope.append(random.choice(self.horoscopes))
 	check = False
 	while check==False:
 		if horoscope[0]==horoscope[1]:
 			horoscope=horoscope[-1:]
-			horoscope.append(random.choice(datapipe.horoscopes))
+			horoscope.append(random.choice(self.horoscopes))
 		else: check = True
 	horoscope = ' '.join(horoscope)
 	horoscope = horoscope.replace('{NAME}', random.choice(msgobj.source.channel.users))
 	horoscope = horoscope.replace('{SIGN}', sign)
-	self.say("[{}]: {}".format(sign, horoscope), 1)
+	self.reply("[{}]: {}".format(sign, horoscope), 1)
 	
 def __init__(self):
 	try:
