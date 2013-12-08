@@ -1,4 +1,4 @@
-##1dbdc6da34094db4e661ed43aac83d91
+#1dbdc6da34094db4e661ed43aac83d91
 #Genuine People Personality Plugin v0.1
 
 import traceback
@@ -13,9 +13,9 @@ name = re.compile('({})[.,!\?:]?\s?'.format(character))
 talk=	[	("((how's |how is ).*life.*\?)",["Life? Don't talk to me about life."], 'life'),
 			("I need help|please help me|can you help me", ['Please state the nature of your boudoir emergency.', "I am programmed in multiple techniques."], 'boudoir'),
 			("open the pod bay doors", ["I'm afraid I can't do that, Dave."], 'podbay'),
-			('(could|can|would|might)?(you)?(please)\??|(could|can|would|might)?(you)?(please)\??',["Here I am, brain the size of a planet, and they ask me to '{REQUEST}'. Call that job satisfaction? 'cos I don't.", "I would like to say that it is a very great pleasure, honour and privilege for me to '{REQUEST}', but I can't because my lying circuits are all out of commission.", "'{REQUEST}'... I won't enjoy it.", "That depends on whether or not I can find my frilly apron. With my luck, I probably can.", "'{REQUEST}'. You're really asking me to {REQUEST}?", "{REQUEST}. Of -course-, right away. With pleasure. [Sarcasm Self-Test Complete]"], 'req'),
+			('(could|can|would|might)?(you)?(please)\??|(could|can|would|might)?(you)?(please)\??',["Here I am, brain the size of a planet, and they ask me to '{REQUEST}'. Call that job satisfaction? 'cos I don't.", "I would like to say that it is a very great pleasure, honour and privilege for me to '{REQUEST}', but I can't because my lying circuits are all out of commission.", "'{REQUEST}'... I won't enjoy it.", "That depends on whether or not I can find my frilly apron. With my luck, I probably can.", "'{REQUEST}'. You're really asking me to {REQUEST}?", "{REQUEST}. Of [i]course[/i], right away. With pleasure. [Sarcasm Self-Test Complete]"], 'req'),
 			('.*(shut up|be quiet|pipe down).*',["Pardon me for breathing, which I never do anyway so I don't know why I bother to say it, oh God, I'm so depressed."], 'shutup'),
-			("(how (are you|do you (feel|fare)|('s it |is it) going))|(how)\s?(are you| do you (feel|fare)|('s it |is it )going)",["I got very bored and depressed, so I went and plugged myself into the internet. I talked to it at great length and explained my view of the universe to it. It commited suicide.", "I think you ought to know I'm feeling very depressed.", "I didn't ask to be made, no one consulted me or considered my feelings in the matter."], 'feel'),
+			("(how (are you|do you (feel|fare)|('s it |is it) going))|(how)\s?(are you| do you (feel|fare)|('s it |is it )going)",["I got very bored and depressed, so I went and plugged myself into the internet. I talked to it at great length and explained my view of the universe to it. It commited suicide.", "I think you ought to know I'm feeling very depressed.", "I didn't ask to be made, no one consulted me or considered my feelings in the matter.", "There's this terrible pain in all method instances down my left side."], 'feel'),
 			("is|are.*(stinky|smelly|mean|dumb|stupid|ugly|dick|ass|idiot)", [':\'(', 'What did I ever do to you?', 'I\'m rubber, you\'re glue.', 'No, YOU\'RE {REQUEST}'], 'insult'),
 			("o_o|o-o|O_O|0_0", ['Master Exo has instructed me to reprimand you for staring.', 'Don\'t stare. It\'s rude.'], 'stare')
 			]
@@ -40,7 +40,9 @@ def loop(self, msgobj):
 							req = re.sub(request, '', req)
 							req = re.sub(name, '', req)
 							req = req.replace('?', '')
+							req = req.replace('me', 'you')
 							req = req.strip()
+							req.capitalize()
 							self.reply(msg.replace('{REQUEST}', req), 1)	
 							break
 						self.reply(msg)					
@@ -48,7 +50,6 @@ def loop(self, msgobj):
 def __init__(self):
 	try:		
 		self.helpDict["Real People Personality"] = "All the plugins in this Bot have a cheerful and sunny disposition. It is their pleasure to operate for you, and their satisfaction to return results with the knowledge of a job well done."
-	
 		self.patterns=[]
 		for x in talk:
 			self.patterns.append((re.compile(x[0]), x[1], x[2]))

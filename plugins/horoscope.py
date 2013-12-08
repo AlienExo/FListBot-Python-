@@ -1,4 +1,4 @@
-##1dbdc6da34094db4e661ed43aac83d91
+#1dbdc6da34094db4e661ed43aac83d91
 import traceback
 import random
 import re
@@ -38,8 +38,8 @@ signs=[(20,'Capricorn'), (50,'Aquarius'), (79,'Pisces'), (110,'Aries'), (141,'Ta
 
 date = re.compile('(?P<day>\d{1,2})(.|(st|nd|rd|th))?(\s)?(?P<month>(\d{1,2}|\w{3,9}))')
 
-def horoscope(self):
-	day, month = date.search(self.params).group('day', 'month')
+def horoscope(self, msgobj):
+	day, month = date.search(msgobj.params).group('day', 'month')
 	day = int(day)
 	try:
 		month = int(month)
@@ -58,26 +58,24 @@ def horoscope(self):
 	
 	horoscope = []
 	for x in range(2):
-		horoscope.append(random.choice(self.horoscopes))
+		horoscope.append(random.choice(datapipe.horoscopes))
 	check = False
 	while check==False:
 		if horoscope[0]==horoscope[1]:
 			horoscope=horoscope[-1:]
-			horoscope.append(random.choice(self.horoscopes))
+			horoscope.append(random.choice(datapipe.horoscopes))
 		else: check = True
 	horoscope = ' '.join(horoscope)
-	horoscope = horoscope.replace('{NAME}', random.choice(self.channels[self.source.channel].users))
+	horoscope = horoscope.replace('{NAME}', random.choice(msgobj.source.channel.users))
 	horoscope = horoscope.replace('{SIGN}', sign)
 	self.say("[{}]: {}".format(sign, horoscope), 1)
 	
 def __init__(self):
 	try:
 		self.horoscopes=self.loadData('horoscopes', list)
-		self.cf_list[".hs"]="horoscope" #this maps to the function to be executed on command receiving.
-		self.cf_levels['.hs']=2 #0 - creator only, 1 - admin, 2 - public
-		self.cf_access_types['.hs']=[0,1,2] #execute if message from 0- direct, 1 - nick in chan, 2 - chan
-		self.dict_help[".hs"]="Prints your current horoscope. Usage '.h <DD.MM>, e.g. .h 29.5"
+		self.functions[".hs"]=("horoscope", 2, [0,1,2])
+		self.helpDict[".hs"]="Prints your current horoscope. Usage '.h <DD.MM>, e.g. .h 29.5"
 		
 	except Exception as error:
-		self.writeLog("---Error initializing plugin '.horoscope': {}".format(error), 2)
+		self.writeLog("---Error initializing plugin '.horoscope': {}".format(error))
 		traceback.print_exc()

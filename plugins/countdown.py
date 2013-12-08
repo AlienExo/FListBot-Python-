@@ -22,10 +22,8 @@ def countdown(self):
 			
 def __init__(self):
 	try:
-		self.cf_list[".cd"]="countdown"
-		self.cf_levels['.cd']=1
-		self.cf_access_types['.cd']=[0,1,2]
-		self.dict_help[".cd"]="Shows the time left until an event. Usage: .cd (lists the next five), .cd -a (lists all), .cd dd.mm.yyyy hh:mm (new countdown)"
+		self.functions[".cd"]=("countdown", 1, [0,1,2])
+		self.helpDict[".cd"]="Shows the time left until an event. Usage: .cd (lists the next five), .cd -a (lists all), .cd dd.mm.yyyy hh:mm (new countdown)"
 		self.cds=self._loaddata('countdowns')
 		print self.cds
 	except:

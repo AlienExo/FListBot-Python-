@@ -150,10 +150,8 @@ def loop(self):
 	
 def __init__(self):
 	try:
-		self.cf_list['.links']="links"
-		self.cf_levels['.links']=2
-		self.cf_access_types['.links']=[0,1,2]
-		self.dict_help[".links"]="Repeats the last <x> links (.links <x>), 10 links since a time (in GMT) (.links -t <HH:MM>) or 10 links mentioned by a user (.links -u <user>)."
+		self.functions['.links']=("links", 2, [0,1,2])
+		self.helpDict[".links"]="Repeats the last <x> links (.links <x>), 10 links since a time (in GMT) (.links -t <HH:MM>) or 10 links mentioned by a user (.links -u <user>)."
 		self.linklist=self.loadData('links', tuple)
 		
 		www_re = re.compile('(((http|https)://)|(www\.))+([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?') 

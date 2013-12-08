@@ -48,10 +48,8 @@ def diceroll(self):
 
 def __init__(self):
 	try:
-		self.cf_list['.d']="diceroll"
-		self.cf_levels['.d']=2
-		self.cf_access_types['.d']=[0,1,2]
-		self.dict_help[".d"]="Rolls a die. Usage .r <a>d<b>(+<c>) (DC d), e.g. .r 3d6+5 DC 4"
+		self.functions['.d']=("diceroll", 2, [0,1,2])
+		self.helpDict[".d"]="Rolls a die. Usage .r <a>d<b>(+<c>) (DC d), e.g. .r 3d6+5 DC 4"
 	except:
 		self.writeLog("Error initializing plugin 'diceroll'", 2)
 		self.noteError()

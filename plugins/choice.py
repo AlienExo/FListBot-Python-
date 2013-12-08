@@ -17,10 +17,8 @@ def choice(self):
 	
 def __init__(self):
 	try:
-		self.cf_list[".c"]="choice"
-		self.cf_levels['.c']=2
-		self.cf_access_types['.c']=[0,1,2]
-		self.dict_help[".c"]="Indecisive? This function chooses! Usage e.g. .c Sekt or Selters"
+		self.functions[".c"]=("choice", 2, [0,1,2])
+		self.helpDict[".c"]="Indecisive? This function chooses! Usage e.g. .c Sekt or Selters"
 	except:
 		self.writeLog("Error initializing plugin 'choice'", 2)
 		traceback.print_exc()

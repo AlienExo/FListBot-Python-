@@ -28,9 +28,7 @@ def eightball(self, msgobj):
 	
 def __init__(self):
 	try:
-		self.cf_list['.e']="eightball"
-		self.cf_levels['.e']=2
-		self.cf_access_types['.e']=[0,1,2]
+		self.functions['.e']= ("eightball", 2, [0,1,2])
 		self.helpDict['.e']="Ask the allmighty eightball. Marvel at its wise words. What could it meeeeeean? Usage: .e Question"
 	except:
 		print("Error initializing plugin 'eightball'")

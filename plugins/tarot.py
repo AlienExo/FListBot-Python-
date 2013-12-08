@@ -76,10 +76,8 @@ def tarot(self):
 
 def __init__(self):
 	try:
-		self.cf_list[".t"]="tarot"
-		self.cf_levels['.t']=2
-		self.cf_access_types['.t']=[0,1,2]
-		self.dict_help[".t"]="A random card reading. Usage: '.t <spread number>'. Spreads range from {} to {}. For detail on a card, '.t -e <card name>'".format(range(len(spreads))[0], range(len(spreads))[-1])
+		self.functions[".t"]=("tarot", 2, [0,1,2])
+		self.helpDict[".t"]="A random card reading. Usage: '.t <spread number>'. Spreads range from {} to {}. For detail on a card, '.t -e <card name>'".format(range(len(spreads))[0], range(len(spreads))[-1])
 	except Exception as error:
 		self.writeLog("Error initializing plugin 'Tarot': {}".format(error), 2)
 		self.noteError()

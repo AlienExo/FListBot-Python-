@@ -78,10 +78,8 @@ def lastseen(self, mode=0, mrec=0):
 
 def __init__(self):
 	try:
-		self.cf_list[".ls"]="lastseen"
-		self.cf_levels['.ls']=2
-		self.cf_access_types['.ls']=[0,1,2]
-		self.dict_help[".ls"]="Shows when a user was last seen (by the bot). Usage: .ls (-e) <Username>. -e for that exact nick, otherwise, it scans for any associated nick."
+		self.functions[".ls"]=("lastseen", 2, [0,1,2])
+		self.helpDict[".ls"]="Shows when a user was last seen (by the bot). Usage: .ls (-e) <Username>. -e for that exact nick, otherwise, it scans for any associated nick."
 	except:
 		self.writeLog("Error initializing plugin 'lastseen'", 2)
 		self.noteError()

@@ -2,20 +2,20 @@ import json
 from urllib import urlencode
 import urllib2
 
-account=	"ACCOUNT"
-character=	"CHARACTER"
-password=	"PASSWORD"
+account=	"Cogito"
+character=	"Cogito"
+password=	"1ChD3Nk34Ls=!"
 
 banter = True
 banterchance = 1.0
 minage = 13
 
-channels=	['CHANNEL 1']
+channels=	['Gay/Bi Male Human(oid)s. ']
 #channels=	['Development']
 # admins defines who can issue admin-level commands to the bot. Looks like this:
 # admins = ["First Admin", "second admin", "xXx third admin-dono xXX"]
 #please be precise, else python pukes up an error. TIA. 
-admins = 	["ADMINS"]
+admins = 	["Exo", "Kalikrates"]
 
 host=		'chat.f-list.net'
 port=		9722	#9722 - Real | 8722 - Dev

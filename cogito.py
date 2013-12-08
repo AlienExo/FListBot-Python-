@@ -169,13 +169,19 @@ class DataPipe():
 		self.song_flag 		= False
 		self.success_flag 		= False
 		self.personality	= None
+		
+	def loadData(self, file, expected=dict, path='./data/'):
+		utils.loadData(file, expected=dict, path='./data/')
+		
+	def saveData(self, data, file, path='./data/'):
+		utils.saveData(data, file, path='./data/')
 
 	def reply(self, message, route):
 		reply(message, route)
 		
 	def writeLog(self, text):
 		utils.log(text, 1)
-
+		
 datapipe = DataPipe()
 
 def getUser(user):
@@ -451,8 +457,8 @@ class FListCommands(threading.Thread):
 	
 	def STA(self, item):
 		char = getUser(item.args['character'])
-			if char.name in allAdmins:
-				char.status = item.args['status']			
+		if char.name in allAdmins:
+			char.status = item.args['status']			
 	
 	def SYS(self, item):
 		utils.log(item.args['message'])
@@ -666,7 +672,7 @@ class FListCommands(threading.Thread):
 class FListProtocol(WebSocketClientProtocol, FListCommands):
 	def __init__(self):
 		datapipe.FListProtocol = self
-
+		
 	def onOpen(self):
 		datapipe.key = FListAPI.getKey()
 		sendRaw("IDN {}".format(json.dumps({"method":"ticket","account":config.account,"character":"Cogito","ticket":datapipe.key,"cname":"cogito","cversion":"0"})))
@@ -707,7 +713,7 @@ def parseText(self, msg):
 				else: msg.cf_level = 2
 				#print msg.source.character.name, msg.source.channel.ops, datapipe.admins, msg.cf_level, msg.source.character.name in msg.source.channel.ops, msg.source.character.name in datapipe.admins
 				if msg.cf_level <= func_params[1]:
-					print ("\t\t\tHanding ALL the things.")
+					print ("\t\t\tHanding '{}' the things.".format(func_params))
 					handle_all_the_things(self, msg, func_params[0])
 	except IndexError:
 		traceback.print_exc()
@@ -778,7 +784,7 @@ def handle_all_the_things(self, msgobj, cmd=None):
 		traceback.print_exc()
 	else:
 		#needs to be selective to user commands, not FListCommands shit. :/
-		if config.banter and cmd in config.cf_list.keys() and random.random>config.banterchance:
+		if config.banter and (cmd in config.functions.keys()) and (random.random>config.banterchance):
 			reply(eval(random.choice(funcBanter)), 2)
 	
 def _songreset():

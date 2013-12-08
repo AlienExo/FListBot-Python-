@@ -77,10 +77,8 @@ def __init__(self):
 	try:
 		with open('./data/names.yml', 'r') as inp:
 			self.lastnames, self.firstnames = yaml.load_all(inp)
-		self.cf_list['.n']="namegen"
-		self.cf_levels['.n']=2
-		self.cf_access_types['.n']=[0,1,2]
-		self.dict_help['.n']="Generates X names of Y length. Usage: .n <x> <y>  Alternative: .n -r <x> returns <x> real names (mixed genders)."
+		self.functions['.n']=("namegen", 2, [0,1,2])
+		self.helpDict['.n']="Generates X names of Y length. Usage: .n <x> <y>  Alternative: .n -r <x> returns <x> real names (mixed genders)."
 	except Exception as error:
 		self.writeLog("Error initializing plugin 'namegen': {}".format(error), 2)
 		self.noteError()

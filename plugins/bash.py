@@ -60,10 +60,8 @@ def bash(self):
 		
 def __init__(self):
 	try:
-		self.cf_list['.b']="bash"
-		self.cf_levels['.b']=2
-		self.cf_access_types['.b']=[0,1,2]
-		self.dict_help[".b"]="Loads a quote from the Waargh! Bash. Leave blank for a random quote. Usage: .b <Number> "
+		self.functions['.b']=("bash", 2, [0,1,2])
+		self.helpDict[".b"]="Loads a quote from the Waargh! Bash. Leave blank for a random quote. Usage: .b <Number> "
 		self.bashlim=15
 		self.lasttime=time.time()-15
 	except Exception as error:

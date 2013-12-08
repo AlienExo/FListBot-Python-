@@ -58,9 +58,7 @@ def hymmnos(self, msgobj):
 
 def __init__(self):
 	try:
-		self.cf_list[".h"]="hymmnos"
-		self.cf_levels['.h']=2
-		self.cf_access_types['.h']=[0,1,2]
+		self.functions[".h"]=("hymmnos", 2, [0,1,2])
 		self.helpDict[".h"]="Translates from the conlang 'Hymmnos', which Ustlooz uses, to English. Usage: .h <Word/sentence>."
 	except:
 		self.writeLog("Error initializing plugin 'hymmnos'")

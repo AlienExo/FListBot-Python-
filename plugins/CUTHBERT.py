@@ -1,4 +1,4 @@
-#1dbdc6da34094db4e661ed43aac83d91
+##1dbdc6da34094db4e661ed43aac83d91
 #Genuine People Personality Plugin v0.1
 
 import traceback
@@ -46,7 +46,6 @@ def loop(self, msgobj):
 def __init__(self):
 	try:		
 		self.helpDict["Real People Personality"] = "All the plugins in this Bot have a cheerful and sunny disposition. It is their pleasure to operate for you, and their satisfaction to return results with the knowledge of a job well done."
-	
 		self.patterns=[]
 		for x in talk:
 			self.patterns.append((re.compile(x[0]), x[1], x[2]))
