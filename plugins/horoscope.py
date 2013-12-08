@@ -36,7 +36,7 @@ Capricorn	357-365
 
 signs=[(20,'Capricorn'), (50,'Aquarius'), (79,'Pisces'), (110,'Aries'), (141,'Taurus'), (172,'Gemini'), (202,'Cancer'), (234,'Leo'), (266,'Virgo'), (296,'Libra'), (326,'Scorpio'), (356,'Sagittarius'), (366,'Capricorn')]
 
-date = re.compile('(?P<day>\d{1,2})(.|(st|nd|rd|th))?(\s)?(?P<month>(\d{1,2}|\w{3,9}))')
+date = re.compile('(?P<day>\d{1,2})(.|(st|nd|rd|th))?(\s)*(?P<month>(\d{1,2}|\w{3,9}))')
 
 def horoscope(self, msgobj):
 	day, month = date.search(msgobj.params).group('day', 'month')

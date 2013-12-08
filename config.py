@@ -49,7 +49,7 @@ functions = {
 					".black":			("blacklist",	1, [0,1]),
 					".lj":				("lastJoined",	1, [0]),
 					".r":				("rainbowText",	1, [0,1]),
-					".s":				("speak",		1, [0,1]),
+					".s":				("say",			1, [0,1]),
 					".a":				("act",			1, [0,1]),
 					".kick":			("kick",		1, [0,1]),
 					".ban":				("ban",			1, [0,1]),
