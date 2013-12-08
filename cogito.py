@@ -579,18 +579,13 @@ class FListCommands(threading.Thread):
 	def rainbowText(self, item):
 		slist=[]
 		a = len(item.params)
-		b = a//6
-		c = 0
-		if b<1:
+		d,e = divmod(a, 6)
+		if a<7:
 			reply("Gonna need at least seven letters for a rainbow!",1)
-		for x in xrange(0, len(item.params), b):
-			slist.append(item.params[x:x+b])
-			c = x+b
-		print item.params, c, "".join(slist), item.params[c:]
-		if a/6 != a//6: slist[-1]=slist[-1]+item.params[c:]
-		if item.source.channel.name == "private":
-			schan = config.channels[0]
-		else: schan = item.source.channel
+		for x in xrange(0, a, d):
+			slist.append(item.params[x:x+d])
+		if e>3:
+			slist[-2]=slist[-2]+item.params[-(e-3):]
 		sendText("[color=red]{}[/color][color=orange]{}[/color][color=yellow]{}[/color][color=green]{}[/color][color=cyan]{}[/color][color=blue]{}[/color][color=purple]{}[/color]".format(*slist), 2, chan=schan)
 		
 	
