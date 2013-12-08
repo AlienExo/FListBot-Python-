@@ -176,7 +176,7 @@ class DataPipe():
 	def saveData(self, data, file):
 		utils.saveData(data, file)
 
-	def reply(self, message, route):
+	def reply(self, message, route=2):
 		reply(message, route)
 		
 	def writeLog(self, text):
