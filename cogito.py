@@ -182,6 +182,9 @@ datapipe = DataPipe()
 
 def getUser(user):
 	if isinstance(user, User): return user
+	if isinstance(user, Channel):
+		print("{} is a Channel instance on which getUser has been called. Check the program.".format(user))
+		return None
 	try: user=user['identity']
 	except: pass
 	if user in datapipe.usersDict.keys():
@@ -193,12 +196,15 @@ def getUser(user):
 	
 def getChannel(channel):
 	if isinstance(channel, Channel): return channel
+	if isinstance(channel, User):
+		print "{} is actually a User instance; this is what's been messing up your channelDict.".format(channel)
+		return None
 	for x in datapipe.channelDict.values():
-		if x.name == channel or x.key == channel: return x
-	else:
-		chan = Channel(channel)
-		datapipe.channelDict[channel]=chan
-		return chan
+		if (x.name == channel) or (x.key == channel): 
+			return x
+	chan = Channel(channel)
+	datapipe.channelDict[channel]=chan
+	return chan
 		
 datapipe.getUser = getUser
 datapipe.getChannel = getChannel
@@ -224,7 +230,7 @@ class Message():
 			if len(msg)<4:
 				self.args 	= {}
 				self.params = []
-				self.source = Source(User('None'), Channel('None'))
+				self.source = Source(Channel('None'), User('None'))
 				return
 			else: self.msg_data = json.loads(msg[4:])
 			try:
@@ -254,10 +260,10 @@ class Message():
 			self.msg_data = ""
 			self.args = {}
 			self.params = []
-			self.source = Source(User('None'), Channel('None'))
+			self.source = Source(Channel('None'), User('None'))
 			
 		except KeyError:
-			self.source = Source(User('None'), Channel('None'))
+			self.source = Source(Channel('None'), User('None'))
 			
 		except:
 			print "WEIRD ERROR"
@@ -333,12 +339,14 @@ def checkAge(age, char, chan):
 					y = getUser(x)
 					try:
 						y = y.status 
-						if y in ['busy', 'dnd']: continue
+						print y
+						if y in ['busy', 'dnd']: 
+							continue
 						else:
 							print("\tAdministrator {} found, reporting user to be checked.".format(y.name))
 							sendText("Cannot automatically determine age of user '{}'. Please verify manually: [url=http://www.f-list.net/c/{}]here[/url]. [sub]To add user to whitelist, tell me '.white {}', in the channel to whitelist the user for.[/sub]".format(char.name, quote_plus(char.name), char.name), 0, y.name)
 							return
-					except: pass
+					except: traceback.print_exc()
 		else:
 			print("\tUser {} has passed inspection (Age>{}), claiming to be {} years old.".format(char.name, config.minage, char.age))
 			#sendText("Demonstration: User {} has passed inspection (Age>{}), being {} years old. Apparently.".format(char.name, config.minage, char.age), 0, 'Valorin Petrov')
@@ -381,7 +389,6 @@ class FListCommands(threading.Thread):
 			if not op in chan.ops: 
 				chan.ops.append(str(op))
 				allAdmins.append(str(op))
-		chan = getChannel(chan)
 		print ("Channel operators for "+chan.name +": "+ str(chan.ops))
 		
 	def CON(self, item):
@@ -498,7 +505,7 @@ class FListCommands(threading.Thread):
 
 	def op(self, item):
 		candidate = item.params
-		chan = getChannel(item.source.channel)
+		chan = item.source.channel
 		chan.ops.append(candidate)
 		datapipe.admins.append(candidate)
 		reply("{} has been made a bot operator.".format(candidate), 0)
@@ -506,7 +513,7 @@ class FListCommands(threading.Thread):
 		
 	def deop(self, item):
 		candidate = item.params
-		chan = getChannel(item.source.channel)
+		chan = item.source.channel
 		chan.ops.remove(config.admins.index(candidate))
 		datapipe.admins.remove(candidate)
 		reply("{} is no longer a bot operator.".format(candidate), 0)
@@ -559,7 +566,7 @@ class FListCommands(threading.Thread):
 		if item.source.channel.name == 'private':
 			channel = getChannel(config.channels[0])
 		else:
-			channel = getChannel(item.source.channel)
+			channel = item.source.channel
 		print channel.name
 		last = channel.lastjoined
 		users = []
