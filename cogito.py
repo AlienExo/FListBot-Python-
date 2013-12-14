@@ -1,15 +1,5 @@
-#27/10/13 initiating rewrite to use threading, Queue to handle FListAPI, cogito In and cogito Out in parallel.
-#02/11/13 implement user/channel __str__, work on that TERRIBLE __getattribute__ / __getattr__ override. seems to fuck with __repr__, __str__, whatever.
 #Work needed: Lines 581+
 
-#the whole self/msg/whatever class-based thing is probably still shit
-#DataPipe or FListProtocol might need a dummy sendRaw() and sendMessage() because otherwise any functions trying to access those won't find the global ones, since most plugin/personality calls are from inside the class.
-	#test with eightball.py
-	
-#make an allAdmins list so that you don't iterate over ALL users on every status chage?
-	
-#rainbowshit [color=red][/color][color=orange][/color][color=yellow][/color][color=green][/color][color=cyan][/color][color=blue][/color][color=purple][/color]
-	
 import config
 import datetime
 import FListAPI
@@ -45,7 +35,6 @@ allAdmins		= []
 banBanter		= utils.loadData('banbanter', list)
 funcBanter		= utils.loadData('funcbanter', list)
 joinmsgDict 	= utils.loadData('joinmsg', dict)
-lastseenDict 	= utils.loadData('lastseen', dict)
 server_vars 	= {}
 
 class Channel():
@@ -62,14 +51,15 @@ class Channel():
 		name = getUser(character).name
 		chan.users.append(name)
 		chan.lastjoined.append(name)
-		print("\tAppended {} to lastjoined. Current length: {}".format(name, len(chan.lastjoined)))
+		print("\tAppended {} to lastjoined. Current length: {}\n".format(name, len(chan.lastjoined)))
 				
 	def userLeft(chan, character):
 		name = getUser(character).name
 		try:
 			chan.users.remove(name)
 			chan.lastjoined.remove(name)
-		except: pass
+		except:
+			traceback.print_exc()
 		
 		
 def userFromFListData(name, data):
@@ -91,6 +81,7 @@ class User():
 	def __init__(self, name):
 		self.name = name
 		self.lastseen = datetime.datetime.now()
+		self.status = "online"
 		self.channels=[]
 		self.kinks=()
 
@@ -133,9 +124,13 @@ def sendText(message, route=1, char='Cogito', chan='private'):
 		msg = "{}{}".format(prefix*(route>1), message)
 		msg = "MSG {}".format(json.dumps({'channel':chan, 'message':message}))
 	elif route<5:
-		if route==4: path=="PRI" 
-		else: path=="MSG"
-		msg = "{} /me {}".format(path, json.dumps({'recipient':char, 'message':message}))
+		message = "/me "+message
+		if route==4 or chan=='private': 
+			path="PRI" 
+			msg = "{} {}".format(path, json.dumps({'recipient':char, 'message':message}))
+		else: 
+			path="MSG"
+			msg = "{} {}".format(path, json.dumps({'channel':chan, 'message':message}))
 	sendQueue.put(msg)
 	
 def reply(message, route=2):
@@ -161,6 +156,7 @@ class DataPipe():
 		self.channelDict	= {}
 		self.dict_limits 	= {}
 		self.usersDict 		= {}
+		self.lastseenDict 	= {}
 		self.plugins 		= {}
 		self.singer			= ""
 		self.song 			= ""
@@ -196,7 +192,6 @@ def getUser(user):
 		return xuser
 	
 def getChannel(channel):
-	#might potentially interfere with the ORS parser?
 	if isinstance(channel, Channel): return channel
 	for x in datapipe.channelDict.values():
 		if x.name == channel or x.key == channel: return x
@@ -204,6 +199,9 @@ def getChannel(channel):
 		chan = Channel(channel)
 		datapipe.channelDict[channel]=chan
 		return chan
+		
+datapipe.getUser = getUser
+datapipe.getChannel = getChannel
 	
 #"It's easier to ask forgiveness than permission"
 class Source():
@@ -300,7 +298,7 @@ def load(self):
 		except:
 			traceback.print_exc()
 		else:
-			print("---plugin '{}' initialized.".format(name))
+			print("---plugin '{}' successfully initialized.".format(name))
 		
 def ORSParse(data):
 	print "\tParsing ORS data. Some Assembly Required."
@@ -326,17 +324,21 @@ def checkAge(age, char, chan):
 		#	char.kick(chan)
 		elif char.age ==0:
 			chanusers = getChannel(chan).users
-			print("\tCannot parse.")
 			chan.userJoined(char.name)
+			print("\tCannot parse.")
 			xadmins = sorted(chan.ops, key=lambda *args: random.random())
 			for x in xadmins:
 				if x in chanusers:
 					if x in datapipe.ignorelist: continue
-					if x.status in ['busy', 'dnd']: continue
-					else:
-						print("\tAdministrator found: {}".format(x))
-						sendText("Cannot automatically determine age of user '{}'. Please verify manually: [url=http://www.f-list.net/c/{}]here[/url]. [sub]To add user to whitelist, tell me '.white {}', in the channel to whitelist the user for.[/sub]".format(char.name, quote_plus(char.name), char.name), 0, x)
-						return
+					y = getUser(x)
+					try:
+						y = y.status 
+						if y in ['busy', 'dnd']: continue
+						else:
+							print("\tAdministrator {} found, reporting user to be checked.".format(y.name))
+							sendText("Cannot automatically determine age of user '{}'. Please verify manually: [url=http://www.f-list.net/c/{}]here[/url]. [sub]To add user to whitelist, tell me '.white {}', in the channel to whitelist the user for.[/sub]".format(char.name, quote_plus(char.name), char.name), 0, y.name)
+							return
+					except: pass
 		else:
 			print("\tUser {} has passed inspection (Age>{}), claiming to be {} years old.".format(char.name, config.minage, char.age))
 			#sendText("Demonstration: User {} has passed inspection (Age>{}), being {} years old. Apparently.".format(char.name, config.minage, char.age), 0, 'Valorin Petrov')
@@ -434,8 +436,9 @@ class FListCommands(threading.Thread):
 		chan = getChannel(item.args['channel'])
 		if chan.name=="Frontpage":return
 		char = getUser(item.args['character'])
-		utils.log("User {} has left '{}'.".format(char.name, chan.name))
+		print("User {} has left '{}'.".format(char.name, chan.name))
 		chan.userLeft(char)
+		datapipe.lastseenDict[char.name]=datetime.datetime.now
 					
 	def LIS(self, item):pass
 	def NLN(self, item):pass
@@ -586,7 +589,7 @@ class FListCommands(threading.Thread):
 			slist.append(item.params[x:x+d])
 		if e>3:
 			slist[-2]=slist[-2]+item.params[-(e-3):]
-		sendText("[color=red]{}[/color][color=orange]{}[/color][color=yellow]{}[/color][color=green]{}[/color][color=cyan]{}[/color][color=blue]{}[/color][color=purple]{}[/color]".format(*slist), 2, chan=schan)
+		sendText("[color=red]{}[/color][color=orange]{}[/color][color=yellow]{}[/color][color=green]{}[/color][color=cyan]{}[/color][color=blue]{}[/color][color=purple]{}[/color]".format(*slist), 2, chan=config.channels[0])
 		
 	
 	def hibernation(self, item):
@@ -619,7 +622,7 @@ class FListCommands(threading.Thread):
 		try:
 			print msg.args[0]
 			if msg.args[0]:
-				reply(helpDict[msg.args[0]], 0)
+				reply(datapipe.helpDict[msg.args[0]], 0)
 
 		except KeyError:
 			reply("No entry for command '{}'. Please check your syntax and try again.".format(msg.args[1]) , 0)
@@ -627,11 +630,11 @@ class FListCommands(threading.Thread):
 		except IndexError:	
 			reply("{} F-List Bot, v{}. The following functions are available:".format(config.character, config.version), 0)
 			func=[]
-			for x in helpDict.keys():
+			for x in datapipe.helpDict.keys():
 				func.append(x)
 			func.sort()
 			for x in func:
-				reply("--{}: {!s}".format(x, helpDicts[x]), 0)
+				reply("--{}: {!s}".format(x, datapipe.helpDicts[x]), 0)
 
 	def tell(self, msg):
 		sender = msg.source.character.name
@@ -657,11 +660,11 @@ class FListCommands(threading.Thread):
 			utils.saveData(datapipe.messageDict, '{} messages'.format(config.character))
 			reply("[color=green]Message to {} saved.[/color]".format(recipient), 2)
 			
-	def say(self, msg, route=2):
-		sendText(msg.params, route, chan=config.channels[0])
+	def say(self, msg):
+		sendText(msg.params, 2, chan=config.channels[0])
 		
-	def act(self, msg, route=3):
-		sendText(msg.params, route, chan=config.channels[0])
+	def act(self, msg):
+		sendText(msg.params, 3, chan=config.channels[0])
 		
 
 	
@@ -702,12 +705,10 @@ def parseText(self, msg):
 			func_params = datapipe.functions[func]
 			if msg.access_type in func_params[2]:
 				print("\t\tCorrect access type")
+				msg.cf_level = 2
 				if msg.source.character.name in datapipe.admins: msg.cf_level=0
 				elif (msg.source.character.name in msg.source.channel.ops): msg.cf_level = 1
-				elif msg.source.channel.name == 'private': 
-					if msg.source.character.name in allAdmins:
-						msg.cf_level = 1
-				else: msg.cf_level = 2
+				if (msg.source.channel.name == 'private') and (msg.source.character.name in allAdmins): msg.cf_level = 1
 				#print msg.source.character.name, msg.source.channel.ops, datapipe.admins, msg.cf_level, msg.source.character.name in msg.source.channel.ops, msg.source.character.name in datapipe.admins
 				if msg.cf_level <= func_params[1]:
 					print ("\t\t\tHandling '{}'...".format(func_params[0]))

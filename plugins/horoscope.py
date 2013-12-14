@@ -4,6 +4,7 @@ import random
 import re
 months=['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 days=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+elements=["Hydrogen", "Helium", "Lithium", "Beryllium", "Boron", "Carbon", "Nitrogen",  "Oxygen",  "Fluorine",  "Neon",  "Sodium",  "Magnesium",  "Aluminum",  "Silicon",  "Phosphorus",  "Sulfur",  "Chlorine",  "Argon",  "Potassium",  "Calcium",  "Scandium",  "Titanium",  "Vanadium",  "Chromium",  "Manganese",  "Iron",  "Cobalt",  "Nickel",  "Copper",  "Zinc",  "Gallium",  "Germanium",  "Arsenic",  "Selenium",  "Bromine",  "Krypton",  "Rubidium",  "Strontium",  "Yttrium",  "Zirconium",  "Niobium",  "Molybdenum",  "Technetium",  "Ruthenium",  "Rhodium",  "Palladium",  "Silver",  "Cadmium",  "Indium",  "Tin",  "Antimony",  "Tellurium",  "Iodine",  "Xenon",  "Cesium",  "Barium",  "Hafnium",  "Tantalum",  "Tungsten",  "Rhenium",  "Osmium",  "Iridium",  "Platinum",  "Gold",  "Mercury",  "Thallium",  "Lead",  "Bismuth",  "Polonium",  "Astatine", "Radon", "Francium", "Radium", "Unnilquadium", "Unnilpentium", "Unnilhexium", "Unnilseptium", "Unniloctium", "Unnilennium", "Ununnilium", "Unununium", "Ununbium", "Lanthanum", "Cerium", "Praseodymium", "Neodymium", "Promethium", "Samarium", "Europium", "Gadolinium", "Terbium", "Dysprosium", "Holmium", "Erbium", "Thulium", "Ytterbium", "Lutetium", "Actinium", "Thorium", "Protactinium", "Uranium", "Neptunium", "Plutonium", "Americium", "Curium", "Berkelium", "Californium", "Einsteinium", "Fermium", "Mendelevium", "Nobelium", "Lawrencium"]
 mon_len={1:0, 2:32, 3:60, 4:91, 5:121, 6:152, 7:182, 8:213, 9:243, 10:274, 11:305, 12:335}
 
 """
@@ -37,11 +38,10 @@ Capricorn	357-365
 
 signs=[(20,'Capricorn'), (50,'Aquarius'), (79,'Pisces'), (110,'Aries'), (141,'Taurus'), (172,'Gemini'), (202,'Cancer'), (234,'Leo'), (266,'Virgo'), (296,'Libra'), (326,'Scorpio'), (356,'Sagittarius'), (366,'Capricorn')]
 
-date = re.compile('(?P<day>\d{1,2})(\s)*(.|(st|nd|rd|th))?(\s)*(?P<month>(\d{1,2}|\w{3,9}))')
+date = re.compile('(?P<day>\d{1,2})(\s)*(/|.|(st|nd|rd|th))?(\s)*(?P<month>(\d{1,2}|\w{3,9}))')
 
 def horoscope(self, msgobj):
 	day, month = date.search(msgobj.params).group('day', 'month')
-	print day, month
 	day = int(day)
 	try:
 		month = int(month)
@@ -54,6 +54,10 @@ def horoscope(self, msgobj):
 				FLAG = True
 		if not FLAG:	
 			self.reply("Unable to parse '{}' as month. Syntax: .hs DD.MM".format(month), 0)
+	if month>12:
+		sday = day
+		day = month
+		month = sday
 	day=day+mon_len[month]
 	for x in signs:
 		if abs(day-x[0])<31:
@@ -71,6 +75,7 @@ def horoscope(self, msgobj):
 	horoscope = ' '.join(horoscope)
 	horoscope = horoscope.replace('{NAME}', random.choice(msgobj.source.channel.users))
 	horoscope = horoscope.replace('{DAY}', random.choice(days))
+	horoscope = horoscope.replace('{ELEMENT}', random.choice(elements))
 	horoscope = horoscope.replace('{SIGN}', sign)
 
 	self.reply("[{}]: {}".format(sign, horoscope), 1)
