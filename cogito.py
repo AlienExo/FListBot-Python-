@@ -1,3 +1,7 @@
+#rewrite to use a per-channel .minage rather than config.minage. Perhaps a .setage function.
+#export channels with .minage on shutdown, fuck all others.
+	#import from file. for each object, join it and import data.
+
 import config
 import datetime
 import FListAPI
