@@ -62,7 +62,7 @@ def horoscope(self, msgobj):
 	for x in signs:
 		if abs(day-x[0])<31:
 			sign = x[1]
-	
+	print sign
 	horoscope = []
 	for x in range(2):
 		horoscope.append(random.choice(self.horoscopes))
@@ -77,13 +77,18 @@ def horoscope(self, msgobj):
 	horoscope = horoscope.replace('{DAY}', random.choice(days))
 	horoscope = horoscope.replace('{ELEMENT}', random.choice(elements))
 	horoscope = horoscope.replace('{SIGN}', sign)
+	rsign = sign
+	while rsign == sign:
+		rsign = random.choice(signs)[1]
+	horoscope = horoscope.replace('{RSIGN}', rsign)
+	
 
 	self.reply("[{}]: {}".format(sign, horoscope), 1)
 	
 def __init__(self):
 	try:
 		self.horoscopes=self.loadData('horoscopes', list)
-		self.functions[".hs"]=("horoscope", 2, [0,1,2])
+		self.functions[".hs"]=("horoscope", 2, [1])
 		self.helpDict[".hs"]="Prints your current horoscope. Usage '.h <DD.MM>, e.g. .h 29.5"
 		
 	except Exception as error:

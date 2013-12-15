@@ -1,5 +1,3 @@
-#Work needed: Lines 581+
-
 import config
 import datetime
 import FListAPI
@@ -156,7 +154,7 @@ class DataPipe():
 		self.channelDict	= {}
 		self.dict_limits 	= {}
 		self.usersDict 		= {}
-		self.lastseenDict 	= {}
+		self.lastseenDict 	= utils.loadData('lastseen', dict)
 		self.plugins 		= {}
 		self.singer			= ""
 		self.song 			= ""
@@ -338,9 +336,7 @@ def checkAge(age, char, chan):
 					if x in datapipe.ignorelist: continue
 					y = getUser(x)
 					try:
-						y = y.status 
-						print y
-						if y in ['busy', 'dnd']: 
+						if y.status in ['busy', 'dnd']: 
 							continue
 						else:
 							print("\tAdministrator {} found, reporting user to be checked.".format(y.name))
@@ -441,11 +437,12 @@ class FListCommands(threading.Thread):
 						
 	def LCH(self, item):
 		chan = getChannel(item.args['channel'])
-		if chan.name=="Frontpage":return
+		if chan.name == "Frontpage":
+			return
 		char = getUser(item.args['character'])
 		print("User {} has left '{}'.".format(char.name, chan.name))
 		chan.userLeft(char)
-		datapipe.lastseenDict[char.name]=datetime.datetime.now
+		datapipe.lastseenDict[char.name]=datetime.datetime.now()
 					
 	def LIS(self, item):pass
 	def NLN(self, item):pass
@@ -481,7 +478,7 @@ class FListCommands(threading.Thread):
 		server_vars[item.args["variable"]]=item.args["value"]
 		if item.args["variable"]=="msg_flood":
 			new = item.args["value"]*1.25
-			print("\tDetected serverside floodcontrol variable. Self-adjusting: sending output from sendQueue every {} milliseconds.".format(new))
+			print("\tDetected server-side flood control. Self-adjusting: sending output every {} milliseconds.".format(new))
 			server_vars['permissions']=1
 			EternalSender.stop()
 			EternalSender.start(new)
@@ -495,14 +492,12 @@ class FListCommands(threading.Thread):
 		utils.log("{} has been whitelisted by {}.".format(candidate, item.source.character.name))	
 		utils.saveData(datapipe.whitelist, 'whitelist')
 
-		
 	def blacklist(self, item):
 		candidate = item.params
 		datapipe.blacklist.append(candidate)
 		reply("{} has been blacklisted.".format(candidate), 0)
 		utils.log("{} has been blacklisted by {}.".format(candidate, item.source.character.name))
 		
-
 	def op(self, item):
 		candidate = item.params
 		chan = item.source.channel
@@ -514,12 +509,11 @@ class FListCommands(threading.Thread):
 	def deop(self, item):
 		candidate = item.params
 		chan = item.source.channel
-		chan.ops.remove(config.admins.index(candidate))
+		chan.ops.remove(candidate)
 		datapipe.admins.remove(candidate)
 		reply("{} is no longer a bot operator.".format(candidate), 0)
 		utils.log("{} has is no longer a bot operator by order of {}.".format(candidate, item.source.character.name))
 		
-	#REWORK US WE ARE NOT DONE
 	def join(self, item):
 		chan = item.params
 		reply("Command received. Joining '{}'".format(chan), 0)
@@ -527,7 +521,6 @@ class FListCommands(threading.Thread):
 	
 	def part(self, item):
 		chan = item.params
-		#getChannel(self)
 		reply("Command received. Leaving '{}'".format(chan), 0)
 		sendRaw("LCH {}".format(channelKey(chan)))
 	
@@ -581,7 +574,7 @@ class FListCommands(threading.Thread):
 		for x in last:
 			users.append("[user]{}[/user]".format(x))
 		
-		reply("The following {} users recently joined '{}': {}".format(numUsers, channel.name, " ".join(users)), 0)
+		reply("The following {} users (out of a maximum {}) recently joined '{}': {}".format(numUsers, len(channel.lastjoined), channel.name, " ".join(users)), 0)
 		channel.lastjoined=channel.lastjoined[numUsers:]
 			
 	def unban(self, item):pass
@@ -641,7 +634,7 @@ class FListCommands(threading.Thread):
 				func.append(x)
 			func.sort()
 			for x in func:
-				reply("--{}: {!s}".format(x, datapipe.helpDicts[x]), 0)
+				reply("--{}: {!s}".format(x, datapipe.helpDict[x]), 0)
 
 	def tell(self, msg):
 		sender = msg.source.character.name

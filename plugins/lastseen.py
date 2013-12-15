@@ -49,7 +49,7 @@ def lastseen(self, msgobj, mode=0, mrec=0):
 
 def __init__(self):
 	try:
-		self.lastseenDict=utils.loadData('lastseen')
+		self.lastseenDict=utils.loadData('lastseen', dict)
 		self.functions[".ls"]=("lastseen", 2, [0,1,2])
 		self.helpDict[".ls"]="Shows when a user was last seen (by the bot). Usage: .ls <Username>"
 	except:
