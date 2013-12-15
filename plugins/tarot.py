@@ -1,4 +1,4 @@
-##1dbdc6da34094db4e661ed43aac83d91
+#1dbdc6da34094db4e661ed43aac83d91
 import traceback
 import random
 deck= 	{	"[The Fool]":(			"The infinite lies within the simple, just as the simple lies within the infinite.", "The Fool is the spirit in search of experience. He represents the mystical cleverness bereft of reason within us, the childlike ability to tune into the inner workings of the world. ", "protagonist of a story - path through life - journey - Joker's Wild"), 
@@ -32,46 +32,49 @@ spreads={	0:(1, "Single Card", ['your question as a whole']),
 			4:(5, "Love", ['the past', 'the present', 'the future', 'the other person', 'obstacles or positives'])
 		}
 
-def tarot(self):
+def tarot(self, msgobj):
 	try:
 	
-		if self.args[0]=="-q":
+		if msgobj.args[0]=="-q":
 			self.say("{}".format(deck[random.choice(deck.keys())][0]), 2)
 			return
 		
 		cards=[]
-		spread = spreads[int(self.args[0])]
+		spread = spreads[int(msgobj.args[0])]
 		while len(cards)<spread[0]:
 			card = random.choice(deck.keys())
 			if not card in cards: cards.append(card)
 		if spread[0]==1: 
-			self.say("{} - {}".format(card, deck[card][0]), 2)
+			self.reply("{} - {}".format(card, deck[card][0]), 2)
 			return
 		
 		a = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eight', 'ninth', 'tenth']
 		c = 0
 		
-		self.say("Your have requested the {} spread, containing {} card(s).".format(spread[1], spread[0]), 2)
+		self.reply("Your have requested the {} spread, containing {} card(s).".format(spread[1], spread[0]), 2)
+		msg = ""
 		while c < len(cards):
-			self.say("The {} card, indicating {}, is {}.".format(a[c], spread[2][c], cards[c]), 2)
-			c+=1	
-		self.say("For further information about any card, type '.t -e [Card Title]', e.g. '.t -e The Fool'.", 0)
+			msg += "The {} card, indicating {}, is {}.".format(a[c], spread[2][c], cards[c])
+			msg += " | "
+			c+=1
+		self.reply(msg)
+		self.reply("For further information about any card, type '.t -e [Card Title]', e.g. '.t -e The Fool'.", 0)
 		
 	except IndexError:
-		self.say("Arguments specified incorrectly. Usage: '.t {}-{} <spread>', or '.t -e <explanation> [Card Title]'; e.g. '.t 0' or '.t -e The Fool'.".format(range(len(spreads))[0], range(len(spreads))[-1]), 0)
+		self.reply("Arguments specified incorrectly. Usage: '.t {}-{} <spread>', or '.t -e <explanation> [Card Title]'; e.g. '.t 0' or '.t -e The Fool'.".format(range(len(spreads))[0], range(len(spreads))[-1]))
 		traceback.print_exc()
 	
 	except ValueError:
-		if self.args[0]=="-e":
+		if msgobj.args[0]=="-e":
 			try:
 				print self.params
-				card = deck["[{}]".format(" ".join(self.args[1:]))]
-				self.say("{}: {} [{}]".format(self.args[1], card[1], card[2]))
+				card = deck["[{}]".format(" ".join(msgobj.args[1:]))]
+				self.reply("{}: {} [{}]".format(msgobj.args[1], card[1], card[2]))
 			except ValueError:
-				self.say("Error: No card named '{}'.".format(self.args[1]), 0)
+				self.reply("Error: No card named '{}'.".format(msgobj.args[1]))
 	
 	except KeyError:
-		self.say("{} is not a valid number for a spread. Spreads range from {} to {}".format(self.args[0], range(len(spreads))[0], range(len(spreads))[-1]), 0)
+		self.reply("{} is not a valid number for a spread. Spreads range from {} to {}".format(msgobj.args[0], range(len(spreads))[0], range(len(spreads))[-1]))
 		traceback.print_exc()
 
 def __init__(self):

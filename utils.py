@@ -4,6 +4,7 @@ import json
 from urllib import urlencode
 import urllib2
 import time
+import traceback
 import yaml
 
 def log(text, ltype=2):

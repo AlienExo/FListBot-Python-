@@ -1,19 +1,19 @@
-##1dbdc6da34094db4e661ed43aac83d91
+#1dbdc6da34094db4e661ed43aac83d91
 import random
 import traceback
 
-def choice(self):
-	allchoices = " ".join(self.args)
+def choice(self, msgobj):
+	allchoices = " ".join(msgobj.args)
 	allchoices = allchoices.strip("?")
 	selchoice = allchoices.split(" or ")
 	try:
 		choice = random.choice(selchoice)
 	except IndexError:
 		self.writeLog("Index error!", 3)
-		self.say("There has been an error in the Choice Module. We apologize.", 0)
+		self.reply("There has been an error in the Choice Module. We apologize.", 0)
 	else:
 		choice = choice.strip()
-		self.say(choice, self.access_type)
+		self.reply(choice, self.access_type)
 	
 def __init__(self):
 	try:

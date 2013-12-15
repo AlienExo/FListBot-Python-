@@ -39,6 +39,7 @@ def loop(self, msgobj):
 							req = req.replace(msgobj.source.channel.name, '')
 							req = re.sub(request, '', req)
 							req = re.sub(name, '', req)
+							req = req.replace('/me', '')
 							req = req.replace('?', '')
 							req = req.replace('me', 'you')
 							req = req.strip()
