@@ -10,7 +10,7 @@ banter = True
 banterchance = 1.0
 minage = 13
 
-channels=	['Gay/Bi Male Human(oid)s. ']
+channels=	['Gay/Bi Male Human(oid)s. ', 'Manly Males of Extra Manly Manliness']
 #channels=	['Development']
 # admins defines who can issue admin-level commands to the bot. Looks like this:
 # admins = ["First Admin", "second admin", "xXx third admin-dono xXX"]
@@ -47,12 +47,13 @@ functions = {
 					".b":				("ban", 		1, [0,1]),
 					".white":			("whitelist",	1, [0,1]),
 					".black":			("blacklist",	1, [0,1]),
-					".lj":				("lastJoined",	1, [0]),
+					".lj":				("lastJoined",	1, [0,1]),
 					".r":				("rainbowText",	1, [0,1]),
 					".s":				("say",			1, [0,1]),
 					".a":				("act",			1, [0,1]),
 					".kick":			("kick",		1, [0,1]),
 					".ban":				("ban",			1, [0,1]),
 					".leave":			("leave",		1, [0,1]),
-					".join":			("join",		1, [0,1])
+					".join":			("join",		1, [0,1]),
+					".minage":			("minage",		1, [0,1])
 					}
