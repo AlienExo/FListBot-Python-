@@ -55,5 +55,6 @@ functions = {
 					".ban":				("ban",			1, [0,1]),
 					".leave":			("leave",		1, [0,1]),
 					".join":			("join",		1, [0,1]),
-					".minage":			("minage",		1, [0,1])
+					".minage":			("minage",		1, [0,1]),
+					".lc":				("listIndices",	1, [0,1])
 					}

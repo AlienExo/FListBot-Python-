@@ -1,3 +1,5 @@
+#when leaving channel, replace datapipe.channels value with Null to prevent 1 becomine 2, 2 becoming 3.
+
 #rewrite to use a per-channel .minage rather than config.minage. Perhaps a .setage function.
 #export channels with .minage on shutdown, fuck all others.
 	#import from file. for each object, join it and import data.
@@ -42,7 +44,6 @@ funcBanter		= utils.loadData('funcbanter', list)
 joinmsgDict 	= utils.loadData('joinmsg', dict)
 server_vars 	= {}
 
-
 class Channel():
 	def __init__(self, name, ckey=None):
 		self.name=name
@@ -65,9 +66,9 @@ class Channel():
 		try:
 			chan.users.remove(name)
 			chan.lastjoined.remove(name)
+		except ValueError: pass
 		except:
 			traceback.print_exc()
-		
 		
 def userFromFListData(name, data):
 	print("\tUser data acquired.")
@@ -155,7 +156,7 @@ class DataPipe():
 		self.helpDict 		= utils.loadData('help', dict)
 		self.ignorelist		= ['Dregan Stouthilt']
 		self.messageDict 	= utils.loadData('{} messages'.format(config.character), dict)
-		#self.usersDict 		= utils.loadData('users', dict)
+		#self.usersDict 	= utils.loadData('users', dict)
 		self.whitelist		= utils.loadData('whitelist', list)
 		self.admins 		= config.admins + admins
 		self.functions		= config.functions
@@ -172,7 +173,7 @@ class DataPipe():
 		self.access_type    = 0
 		self.songlevel 		= 0
 		self.song_flag 		= False
-		self.success_flag 		= False
+		self.success_flag 	= False
 		self.personality	= None
 		
 	def loadData(self, file, expected=dict):
@@ -418,8 +419,7 @@ class FListCommands(threading.Thread):
 		utils.log("ERROR: {}".format(item.args))
 		if item.args['message']=='This command requires that you have logged in.':
 			sys.exit(1)
-			
-		
+				
 	def FLN(self, item): pass		
 	def FRL(self, item): pass
 	def HLO(self, item): pass
@@ -477,9 +477,8 @@ class FListCommands(threading.Thread):
 	def PIN(self, item): sendRaw("PIN")
 	
 	def STA(self, item):
-		char = getUser(item.args['character'])
-		if char.name in allAdmins:
-			char.status = item.args['status']			
+		if item.args['character'] in allAdmins:
+			getUser(item.args['character']).status = item.args['status']			
 	
 	def SYS(self, item):
 		utils.log(item.args['message'])
@@ -726,14 +725,15 @@ def parseText(self, msg):
 			if msg.source.channel.name == "private": 
 				msg.access_type = 0
 				try:
-					index = int(msgobj.args[0])
-					msgobj.args = msgobj.args [1:]
-					msgobj.params = " ".join(msgobj.args)
-				except ValueError:
+					index = int(msg.args[0])
+					msg.args = msg.args [1:]
+					msg.params = " ".join(msg.args)
+				except ValueError, IndexError:
 					index = 0
+					
 				try:	
 					chan = datapipe.channels[index]
-					print("Rerouting PM command '{}' from channel 'private' into '{}'.".format(cmd, chan.name))
+					print("Rerouting PM command '{}' from channel 'private' into '{}'.".format(func, chan.name))
 					msg.source.channel = chan
 					
 				except IndexError:
@@ -907,10 +907,7 @@ def mainloop():
 		#		func(data)
 		#	except Queue.Empty: pass
 		#	except Exception: traceback.print_exc()
-		#takes a Message instance off the Queue.
-		
 		#Like, (Person who talked to you, function to call when you hear them again, condition to remove this part of the stack)
-		#EventQueue?
 		
 		item, self = recvQueue.get_nowait()
 		datapipe.source = item.source
