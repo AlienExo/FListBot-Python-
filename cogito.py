@@ -49,6 +49,7 @@ class Channel():
 		self.name=name
 		self.key = ckey if ckey is not None else self.name
 		self.minage = config.minage
+		self.index = None
 		self.users=[]
 		self.ops =[]
 		self.lastjoined = []
@@ -59,7 +60,7 @@ class Channel():
 		name = getUser(character).name
 		chan.users.append(name)
 		chan.lastjoined.append(name)
-		print("\tAppended {} to lastjoined. Current length: {}\n".format(name, len(chan.lastjoined)))
+		print("\tAppended {} to {}'s last joined list. Current length: {}".format(name, chan.name, len(chan.lastjoined)))
 				
 	def userLeft(chan, character):
 		name = getUser(character).name
@@ -102,7 +103,8 @@ class User():
 			#data = threads.blockingCallFromThread(reactor, FListAPI.getCharInfo, name)
 			d = threads.deferToThread(FListAPI.getCharInfo(self.name))
 			d.addCallback(userFromFListData)
-			d.addCallback(object.__getattribute__(self, item))
+			# d.addCallback(object.__getattribute__(self, item))
+			d.addCallback(object.__getattribute__, self, item)
 			return d
 			#data = reactor.callFromThread(FListAPI.getCharInfo, name)
 			#reactor.callInThread(getUserData(self, self.name))
@@ -148,6 +150,7 @@ def joinChannel(channel):
 	channel = getChannel(channel)
 	sendRaw("JCH {}".format(json.dumps({'channel':channel.key})))
 	datapipe.channels.append(channel)
+	channel.index = len(datapipe.channels)-1
 
 class DataPipe():
 	def __init__(self):
@@ -164,7 +167,7 @@ class DataPipe():
 		self.pluginexit		= []
 		self.pluginloops	= []
 		self.plugins 		= {}
-		self.channelDict	= {}
+		self.channelDict	= utils.loadData('channels', dict)
 		self.dict_limits 	= {}
 		self.usersDict 		= {}
 		self.lastseenDict 	= utils.loadData('lastseen', dict)
@@ -317,12 +320,11 @@ def load(self):
 			print("---plugin '{}' successfully initialized.".format(name))
 		
 def ORSParse(data):
-	print "\tParsing ORS data. Some Assembly Required."
-	d = defer.Deferred()
+	print "\nParsing ORS data. Some Assembly Required."
 	for part in data:
 		channel = getChannel(part['title'])
 		channel.key = part['name']
-	return d
+	return
 
 def checkAge(age, char, chan):
 	try:
@@ -352,7 +354,7 @@ def checkAge(age, char, chan):
 							continue
 						else:
 							print("\tAdministrator {} found, reporting user to be checked.".format(y.name))
-							sendText("Cannot automatically determine age of user '[user]{}[/user]'. Please verify manually: [user]{}[/user] [sub]To add user to whitelist, tell me '.white {}', in the channel to whitelist the user for.[/sub]".format(char.name, quote_plus(char.name), char.name), 0, y.name)
+							sendText("Cannot automatically determine age of user '[user]{}[/user]'. Please verify manually: [user]{}[/user] [sub]To add user to whitelist, tell me '.white {} {}' in a PM. In the channel, leave the number out.[/sub]".format(char.name, char.name, char.name, chan.index), 0, y.name)
 							return
 					except: traceback.print_exc()
 		else:
@@ -370,7 +372,6 @@ class FListCommands(threading.Thread):
 		threading.Thread.__init__()
 		
 	def reply(self, message, route=2):
-		print ("FListProtocol reply")
 		reply(message, route)
 		
 	def writeLog(self, text):
@@ -461,11 +462,10 @@ class FListCommands(threading.Thread):
 	def ORS(self, item):
 		try:
 			data = item.args['channels']
-			d = ORSParse(data)
+			ORSParse(data)
 			for x in config.channels:
-				d.addCallback(joinChannel(x))
-			#result = threads.blockingCallFromThread(reactor, ORSParse, data)
-			#except Error, exc:
+				joinChannel(x)
+				#print ("Added callback to join {}".format(x))
 		except Exception:
 			traceback.print_exc()
 		
@@ -489,7 +489,7 @@ class FListCommands(threading.Thread):
 		server_vars[item.args["variable"]]=item.args["value"]
 		if item.args["variable"]=="msg_flood":
 			new = item.args["value"]*1.25
-			print("\tDetected server-side flood control. Self-adjusting: sending output every {} milliseconds.".format(new))
+			print("\tDetected server-side flood control. Self-adjusting: sending output every {} milliseconds.".format(new*100))
 			server_vars['permissions']=1
 			EternalSender.stop()
 			EternalSender.start(new)
@@ -497,22 +497,22 @@ class FListCommands(threading.Thread):
 	def listIndices(self, item):
 		self.reply("List of active channels and their indices for channel-specific commands:")
 		for num, chan in enumerate(datapipe.channels):
-			self.reply("#{}: {}".format(num, chan.name))
+			self.reply("#{}: {}".format(num, chan.name), 0)
 			
 	def whitelist(self, item):
-		chan, item = channelFromIndex(self, item)
 		candidate = item.params
-		#	item.source.channel.whitelist.append(candidate)
-		datapipe.whitelist.append(candidate)
+		# datapipe.whitelist.append(candidate)
+		item.source.channel.whitelist.append(candidate)
 		reply("{} has been whitelisted.".format(candidate), 0)	
-		utils.log("{} has been whitelisted by {}.".format(candidate, item.source.character.name))	
+		utils.log("{} has been whitelisted for {} by {}.".format(candidate, item.source.channel.name, item.source.character.name))	
 		utils.saveData(datapipe.whitelist, 'whitelist')
 
 	def blacklist(self, item):
 		candidate = item.params
-		datapipe.blacklist.append(candidate)
+		# datapipe.blacklist.append(candidate)
+		item.source.channel.blacklist.append(candidate)
 		reply("{} has been blacklisted.".format(candidate), 0)
-		utils.log("{} has been blacklisted by {}.".format(candidate, item.source.character.name))
+		utils.log("{} has been blacklisted for {} by {}.".format(candidate, item.source.channel.name, item.source.character.name))
 		
 	def op(self, item):
 		candidate = item.params
@@ -571,9 +571,7 @@ class FListCommands(threading.Thread):
 		sendRaw("CKU {}".format(json.dumps({"channel":item.source.channel.key, "character":character, "length":length})))
 		
 	def lastJoined(self, item):
-		print item.source.channel.name
 		channel = item.source.channel
-		print channel.name
 		last = channel.lastjoined
 		users = []
 		if len(last) == 0:
@@ -595,10 +593,10 @@ class FListCommands(threading.Thread):
 	def minage(self, item):
 		try:
 			age = int(item.args[0])
-			self.source.channel.minage = age
-			self.reply("Successfully set minimum age for {} to {}.".format(item.source.channel.name, age))
+			item.source.channel.minage = age
+			sendText("Cogito Age Check activated by {}. Alerting administrators to characters below age {}".format(item.source.character.name, age), 1, char=item.source.character)
 		except ValueError:
-			self.reply("Error: Cannot parse {} as a number.".format(self.args[0]))
+			self.reply("Error: Cannot parse {} as a number.".format(item.args[0]), 0)
 	
 	def rainbowText(self, item):
 		slist=[]
@@ -610,6 +608,7 @@ class FListCommands(threading.Thread):
 			slist.append(item.params[x:x+d])
 		if e>3:
 			slist[-2]=slist[-2]+item.params[-(e-3):]
+		print len(slist), slist
 		sendText("[color=red]{}[/color][color=orange]{}[/color][color=yellow]{}[/color][color=green]{}[/color][color=cyan]{}[/color][color=blue]{}[/color][color=purple]{}[/color]".format(*slist), 2, chan=config.channels[0])
 		
 	def hibernation(self, item):
@@ -620,6 +619,7 @@ class FListCommands(threading.Thread):
 			chans = {}
 			for name, chaninst in datapipe.channelDict:
 				if hasattr(chaninst, minage): chans[name]=chaninst
+				elif hasattr(chanist, whitelist): chans[name]=chaninst
 			utils.saveData(chans, 'channels')
 			utils.saveData(utils.statsDict, '{} stats'.format(config.character))
 			utils.saveData(admins, 'admins')
@@ -686,12 +686,10 @@ class FListCommands(threading.Thread):
 			
 			
 	def say(self, msg):
-		index, msg = channelFromIndex(self, msg)
-		sendText(msg.params, 2, chan)
+		sendText(msg.params, 2, chan=msg.source.channel)
 		
 	def act(self, msg):
-		index, msg = channelFromIndex(self, msg)
-		sendText(msg.params, 3, chan)
+		sendText(msg.params, 3, chan=msg.source.channel)
 		
 
 	
@@ -702,7 +700,7 @@ class FListProtocol(WebSocketClientProtocol, FListCommands):
 		
 	def onOpen(self):
 		datapipe.key = FListAPI.getKey()
-		sendRaw("IDN {}".format(json.dumps({"method":"ticket","account":config.account,"character":"Cogito","ticket":datapipe.key,"cname":"cogito","cversion":"0"})))
+		sendRaw("IDN {}".format(json.dumps({"method":"ticket","account":config.account,"character":"Cogito","ticket":datapipe.key,"cname":"cogito","cversion":config.version})))
 		sendRaw("LCH {}".format(json.dumps({'channel':'Frontpage'})))
 		sendRaw("ORS")
 
@@ -713,8 +711,8 @@ class FListProtocol(WebSocketClientProtocol, FListCommands):
 		
 """sendRaw and sendText both expect Message() instances, which have self.params (a dict for sendRaw, a string for sendText, similar to received messages), self.source (carried over from the incoming message object?) and that's about it?"""	
 def parseText(self, msg):
-	if not msg.params[:3]=="/me":print ( "{} -- {} ({}): \"{}\"".format(time.strftime("%c"), msg.source.character.name, msg.source.channel.name, msg.params))
-	else: print ( "{} -- ({}){}{}".format(time.strftime("%c"), msg.source.channel.name, msg.source.character.name, msg.params[3:]))
+	if not msg.params[:3]=="/me":print ( "{} -- ({}) {}: \"{}\"".format(time.strftime("%c"), msg.source.channel.name, msg.source.character.name, msg.params))
+	else: print ( "{} -- ({}) {}{}".format(time.strftime("%c"), msg.source.channel.name, msg.source.character.name, msg.params[3:]))
 	try:
 		if msg.args[0] in datapipe.functions.keys():
 			#print ("\tCommand '{}' recognized.".format(msg.args[0]))
@@ -723,22 +721,27 @@ def parseText(self, msg):
 			msg.params = " ".join(msg.args)
 			#!!! CHANGE TO PARSING SYSTEM FOR CHANNELINDEPENDENT WHATEVERTHEFUCK
 			if msg.source.channel.name == "private": 
+				print ("Parsing for channel index...")
 				msg.access_type = 0
+				index = None
 				try:
-					index = int(msg.args[0])
-					msg.args = msg.args [1:]
+					index = int(msg.args[-1])
+					msg.args = msg.args [:-1]
 					msg.params = " ".join(msg.args)
-				except ValueError, IndexError:
-					index = 0
-					
-				try:	
-					chan = datapipe.channels[index]
-					print("Rerouting PM command '{}' from channel 'private' into '{}'.".format(func, chan.name))
-					msg.source.channel = chan
-					
-				except IndexError:
-					self.reply("Command not executed: There is no channel with index {}. There are {} channels registered. To see the list, message me with .cl.".format(index, len(datapipe.channels)))
-					
+				except ValueError: pass
+				except IndexError: pass
+
+				if index:
+					try:	
+						chan = datapipe.channels[index]
+						print("Rerouting PM command '{}' from channel 'private' into '{}'.".format(func, chan.name))
+						msg.source.channel = chan
+					except IndexError:
+						self.reply("Command not executed: There is no channel with index {}. There are {} channels registered. To see the list, message me with .cl.".format(index, len(datapipe.channels)))	
+						return
+						
+					except:	
+						traceback.print_exc()
 			else: 
 				msg.access_type = 1
 			#print msg.access_type,  msg.access_type in datapipe.cf_access_types[func], msg.source.channel.name, msg.source.character.name
@@ -755,7 +758,7 @@ def parseText(self, msg):
 					print ("\t\t\tHandling '{}'...".format(func_params[0]))
 					handle_all_the_things(self, msg, func_params[0])
 				else:
-					self.reply("You do not have the necessary permissions to execute function '{}' in channel '{}'.".format(func_params[0], msg.source.channel.name))
+					self.reply("You do not have the necessary permissions to execute function '{}' in channel '{}'.".format(func_params[0], msg.source.channel.name), 0)
 					
 	except IndexError:
 		traceback.print_exc()
