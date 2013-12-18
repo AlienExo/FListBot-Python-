@@ -1,53 +1,56 @@
-Cogito Flist Bot
+#Cogito Flist Bot
 
-	Prerequisites
-		Python 2.7.6 or later (http://python.org)
-		Twisted 13.2.0 for Python 2.7.6 (http://twistedmatrix.com)
-		Zope Interface (https://pypi.python.org/pypi/zope.interface#download)
-		Autobahn WebSocket library (http://autobahn.ws/)
+#Prerequisites
+*	[Python 2.7.6 or later](http://python.org)
+*	[Twisted 13.2.0 for Python 2.7.6](http://twistedmatrix.com)
+*	[Zope Interface](https://pypi.python.org/pypi/zope.interface#download)
+*	[Autobahn WebSocket library](http://autobahn.ws/)
 
-	Status
-		[X] Basic I/O
-		[X] Admin system
-		[X] API for accessing character data, age checker
-		[X] Port over old plugins
-		[ ] Personality module(s)
+#Summary
+Cogito is a websockets-based bot for FList. Why do you write a bot for that place? I have no idea. I'm just procrastinating on my thesis.
 
-	Summary
-		Cogito is a websockets-based bot for FList. Why do you write a bot for that place? I have no idea. I'm just 			procrastinating on my thesis.
+#Quick Start
+Open config.py, enter an Account to connect to, a Character to use, the Password for that account, the Channel(s) to join and Administrators (their character names) that have top-level control over the bot.  
+```python
+admins = 	["ADMIN 1", "A D M I N 2"]
 
-	Quick Start
-		Open config.py, enter an Account to connect to, a Character to use, the Password for that account, the 					Channel(s) to join and Administrators (their character names) that have top-level control over the bot.
-		Run cogito.py
+account=	"accounttitle"
+character=	"Character Name"
+password=	"passwort123"
 
-	Features
-		Quick, simple config
-			Most of Cogito's core settings are within config.py. Open it with any text editor and supplement the 					required settings (Account to log into, character in that account to use, password for the account, 					channel(s) to survey, and hardcoded administrators to obey) and you're ready to go by running cogito.py
 
-		Automatic age checking
-			Any user that joins any channel Cogito is present in will have their age checked, either via FLists' API or 			(since FLists' API is set to off by default, defying years of data harvesting traditions) by violently 					scraping their profiles and feasting on its sweet, sweet HTML. 
-			Characters whose age does not meet the minimum age, set by any bot administrator, will be automatically 				kicked (Cogito requires chanop status for this to work) and reported to the channel as well. 
-			Users whose profile does not have an age listed are reported to a channel operator in a PM
+channels=	['FirstChannel .', 'Second channel']
+```
+Run cogito.py
 
-		Multichannel surveillance
-			Cogito can survey more than one channel at a time, each with its own minimum age. Every channel cogito joins is 				assigned an index, and commands - rather than having to be issued in-channel to associate them with it - can be 				given in a PM as long as they are concluded with the index of the channel they are supposed to be executed for.
+#Features
+##Quick, simple config
+Most of Cogito's core settings are within config.py. Open it with any text editor and supplement the required settings (Account to log into, character in that account to use, password for the account, channel(s) to survey, and hardcoded administrators to obey) and you're ready to go by running cogito.py
 
-		White and blacklists
-			For each channel, a white and blacklist are maintained, allowing you to set exceptions, e.g. for people too lazy 				to 	set an age, or creepers that happen to be friends with you.
+##Automatic age checking
+Any user that joins any channel Cogito is present in will have their age checked, either via FLists' API or (since FLists' API is set to off by default, defying years of data harvesting traditions) by violently scraping their profiles and feasting on its sweet, sweet HTML. 
+Characters whose age does not meet the minimum age, set by any bot administrator, will be automatically kicked (Cogito requires chanop status for this to work) and reported to the channel as well. 
+Users whose profile does not have an age listed are reported to a channel operator in a PM
 
-		Extensible plugin system
-			On startup, cogito browses its plugins folder and attempts to import any python (.py) files it finds which have 				the correct key in their first line. A template for writing your own plugins is provided, documentation is not. 				It may	be some time in the future.
+##Multichannel surveillance
+Cogito can survey more than one channel at a time, each with its own minimum age. Every channel cogito joins is assigned an index, and commands - rather than having to be issued in-channel to associate them with it - can be given in a PM as long as they are concluded with the index of the channel they are supposed to be executed for.
 
-			Information about currently loaded and active plugins, as well as bot core functions, can be accessed with the 					.help command.
+##White and blacklists
+For each channel, a white and blacklist are maintained, allowing you to set exceptions, e.g. for people too lazy to set an age, or creepers that happen to be friends with you.
 
-			Plugins attached to the current build should be:
-				YouTube Parser - fetches title, length, and related info for any YouTube.com or Youtu.be link cogito finds. 						No more RickRolls.
-				Magic Eightball - enter .e and your question, and receive its wisdom.
-				Horoscopes - enter .hs dd.mm, e.g. .hs 12.12 and receive a unique and special prediction exclusive to 					only you.
-				Short Note Service - enter .tell name: message (e.g. .tell Exo: Cogito is running fine.) and next time 					they join, cogito will deliver message to name.
-				Tarot - It's a conversation starter.
-				Choice - Chooses one of the arguments separated by 'or', e.g. ".c Coke or Booze".
+##Extensible plugin system
+On startup, cogito browses its plugins folder and attempts to import any python (.py) files it finds which have the correct key in their first line. A template for writing your own plugins is provided, documentation is not. It maybe some time in the future.
 
-		BETA: Personality system
-		Supposed to replace the old CUTHBERT.py or GPP.py (which are personality plugins running as plugins themselves), 		the personality system works at its core similar to other plugins (import python files from a dedicated directory 		and bind code to triggers) but also has a number of support functions to enable a more engaging user interface for 		cogito. personality.py has utility functions like spokenNumber, spokenFraction, etc., to enable just that.
-		However, I have no idea how to enable actual 'conversation', e.g. event-oriented memory of who spoke last and 			what context was established. Still, it's a good system to swap in 'wrappers' that dress up e.g. .tell with a 			personality, such as letting a bartender personality pass a note written in a receipt.
+Information about currently loaded and active plugins, as well as bot core functions, can be accessed with the .help command.
+
+###Plugins attached to the current build should be:
+* YouTube Parser - fetches title, length, and related info for any YouTube.com or Youtu.be link cogito finds. No more RickRolls.  
+* Magic Eightball - enter .e and your question, and receive its wisdom.  
+* Horoscopes - enter .hs dd.mm, e.g. .hs 12.12 and receive a unique and special prediction exclusive to only you.  
+* Short Note Service - enter .tell name: message (e.g. .tell Exo: Cogito is running fine.) and next time they join, cogito will deliver message to name.  
+* Tarot - It's a conversation starter.  
+* Choice - Chooses one of the arguments separated by 'or', e.g. ".c Coke or Booze".  
+
+##BETA: Personality system
+Supposed to replace the old CUTHBERT.py or GPP.py (which are personality plugins running as plugins themselves), the personality system works at its core similar to other plugins (import python files from a dedicated directory and bind code to triggers) but also has a number of support functions to enable a more engaging user interface for cogito. personality.py has utility functions like spokenNumber, spokenFraction, etc., to enable just that.
+However, I have no idea how to enable actual 'conversation', e.g. event-oriented memory of who spoke last and what context was established. Still, it's a good system to swap in 'wrappers' that dress up e.g. .tell with a personality, such as letting a bartender personality pass a note written in a receipt.
