@@ -1,2 +1,6 @@
 .help: ['Displays this message. Use .help <command> to recall a specific entry, e.g.
     .help .b']
+.op: ['Adds bot operator status (not channel operator status) to the specified user, e.g. ".op Magical Maiden Madison". Bot operators can change settings and request kicks/bans/timeouts. They cannot make other users bot operators.']
+.deop: ['Removes bot operator status.']
+.kick: ['Requires op status. Kicks user from the channel.']
+.ban: ['Requires op status. Bans user from the channel. Experimental.']

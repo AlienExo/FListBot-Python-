@@ -1,4 +1,10 @@
 #when leaving channel, replace datapipe.channels value with Null to prevent 1 becomine 2, 2 becoming 3.
+#add a datapipe.ignorelist you can actually add/remove from
+
+# Traceback (most recent call last):
+  # File "C:\Users\kiki\Projects\cogito\cogito.py", line 620, in hibernation
+    # chans = {}
+# ValueError: too many values to unpack
 
 #rewrite to use a per-channel .minage rather than config.minage. Perhaps a .setage function.
 #export channels with .minage on shutdown, fuck all others.
@@ -70,6 +76,20 @@ class Channel():
 		except ValueError: pass
 		except:
 			traceback.print_exc()
+		
+	def join(self):
+		sendRaw("JCH {}".format(json.dumps({'channel':self.key})))
+		for pos, item in enumerate(datapipe.channels):
+			if item==None:
+				print pos, item, datapipe.channels
+				datapipe.channels[pos]=self
+				print pos, item, datapipe.channels
+				return
+		self.index = len(datapipe.channels)-1	
+		
+	def part(self):
+		sendRaw("LCH {}".format(self.key))
+		datapipe.channels[datapipe.channels.index(self)]=None
 		
 def userFromFListData(name, data):
 	print("\tUser data acquired.")
@@ -145,12 +165,6 @@ def sendText(message, route=1, char='Cogito', chan='private'):
 	
 def reply(message, route=2):
 	sendText(message, route, datapipe.source.character.name, datapipe.source.channel.name)
-	
-def joinChannel(channel):
-	channel = getChannel(channel)
-	sendRaw("JCH {}".format(json.dumps({'channel':channel.key})))
-	datapipe.channels.append(channel)
-	channel.index = len(datapipe.channels)-1
 
 class DataPipe():
 	def __init__(self):
@@ -354,7 +368,7 @@ def checkAge(age, char, chan):
 							continue
 						else:
 							print("\tAdministrator {} found, reporting user to be checked.".format(y.name))
-							sendText("Cannot automatically determine age of user '[user]{}[/user]'. Please verify manually: [user]{}[/user] [sub]To add user to whitelist, tell me '.white {} {}' in a PM. In the channel, leave the number out.[/sub]".format(char.name, char.name, char.name, chan.index), 0, y.name)
+							sendText("Cannot automatically determine age of user '[user]{}[/user]'. Please verify manually: [user]{}[/user] [sub]To add user to whitelist, tell me '.white {} {}' in a PM. If you tell me in the channel, leave the number out.[/sub]".format(char.name, char.name, char.name, chan.index), 0, y.name)
 							return
 					except: traceback.print_exc()
 		else:
@@ -464,7 +478,7 @@ class FListCommands(threading.Thread):
 			data = item.args['channels']
 			ORSParse(data)
 			for x in config.channels:
-				joinChannel(x)
+				getChannel(x).join()
 				#print ("Added callback to join {}".format(x))
 		except Exception:
 			traceback.print_exc()
@@ -503,7 +517,7 @@ class FListCommands(threading.Thread):
 		candidate = item.params
 		# datapipe.whitelist.append(candidate)
 		item.source.channel.whitelist.append(candidate)
-		reply("{} has been whitelisted.".format(candidate), 0)	
+		reply("{} has been whitelisted.".format(candidate), item.access_type)	
 		utils.log("{} has been whitelisted for {} by {}.".format(candidate, item.source.channel.name, item.source.character.name))	
 		utils.saveData(datapipe.whitelist, 'whitelist')
 
@@ -511,7 +525,7 @@ class FListCommands(threading.Thread):
 		candidate = item.params
 		# datapipe.blacklist.append(candidate)
 		item.source.channel.blacklist.append(candidate)
-		reply("{} has been blacklisted.".format(candidate), 0)
+		reply("{} has been blacklisted.".format(candidate), item.access_type)
 		utils.log("{} has been blacklisted for {} by {}.".format(candidate, item.source.channel.name, item.source.character.name))
 		
 	def op(self, item):
@@ -531,14 +545,14 @@ class FListCommands(threading.Thread):
 		utils.log("{} has is no longer a bot operator by order of {}.".format(candidate, item.source.character.name))
 		
 	def join(self, item):
-		chan = item.params
-		reply("Command received. Joining '{}'".format(chan), 0)
-		joinChannel(chan)
+		chan = getChannel(item.params)
+		reply("Command received. Attempting to join '{}'".format(chan.name), 0)
+		chan.join()
 	
 	def part(self, item):
-		chan = item.params
-		reply("Command received. Leaving '{}'".format(chan), 0)
-		sendRaw("LCH {}".format(channelKey(chan)))
+		chan = getChannel(item.params)
+		reply("Command received. Leaving '{}'".format(chan.name), 0)
+		chan.part()
 	
 	def kick(self, item):
 		char = item.params
@@ -617,7 +631,7 @@ class FListCommands(threading.Thread):
 			print('Shutting down. Stopping reactor and writing data.')
 			reactor.stop()
 			chans = {}
-			for name, chaninst in datapipe.channelDict:
+			for name, chaninst in datapipe.channelDict.items():
 				if hasattr(chaninst, minage): chans[name]=chaninst
 				elif hasattr(chanist, whitelist): chans[name]=chaninst
 			utils.saveData(chans, 'channels')
