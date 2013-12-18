@@ -84,7 +84,9 @@ class Channel():
 				print pos, item, datapipe.channels
 				datapipe.channels[pos]=self
 				print pos, item, datapipe.channels
+				self.index = len(datapipe.channels)-1	
 				return
+		datapipe.channels.append(self)
 		self.index = len(datapipe.channels)-1	
 		
 	def part(self):
@@ -171,7 +173,7 @@ class DataPipe():
 		self.character		= config.character
 		self.blacklist		= utils.loadData('blacklist', list)
 		self.helpDict 		= utils.loadData('help', dict)
-		self.ignorelist		= ['Dregan Stouthilt']
+		self.ignorelist		= ['Dregan Stouthilt', 'Veran']
 		self.messageDict 	= utils.loadData('{} messages'.format(config.character), dict)
 		#self.usersDict 	= utils.loadData('users', dict)
 		self.whitelist		= utils.loadData('whitelist', list)
@@ -349,7 +351,7 @@ def checkAge(age, char, chan):
 			chan.userJoined(char.name)
 			return
 		if char.age<chan.minage and char.age!=0:
-			sendText("Cogito has detected an user [color=red]below the room's minimum age:[/color] {}.".format(char.name), 2, chan=chan)
+			sendText("Cogito has detected an user [color=red]below the room's minimum age:[/color] [user]{}[/user].".format(char.name), 2, chan=chan)
 			banter = eval(random.choice(banBanter))
 			sendText(banter, 2, char.name, chan.key)
 		#	print("\tExpulsion.")
@@ -632,8 +634,8 @@ class FListCommands(threading.Thread):
 			reactor.stop()
 			chans = {}
 			for name, chaninst in datapipe.channelDict.items():
-				if hasattr(chaninst, minage): chans[name]=chaninst
-				elif hasattr(chanist, whitelist): chans[name]=chaninst
+				if hasattr(chaninst, 'minage'): chans[name]=chaninst
+				elif hasattr(chanist, 'whitelist'): chans[name]=chaninst
 			utils.saveData(chans, 'channels')
 			utils.saveData(utils.statsDict, '{} stats'.format(config.character))
 			utils.saveData(admins, 'admins')
@@ -751,7 +753,7 @@ def parseText(self, msg):
 						print("Rerouting PM command '{}' from channel 'private' into '{}'.".format(func, chan.name))
 						msg.source.channel = chan
 					except IndexError:
-						self.reply("Command not executed: There is no channel with index {}. There are {} channels registered. To see the list, message me with .cl.".format(index, len(datapipe.channels)))	
+						self.reply("Command not executed: There is no channel with index {}. There are {} channels registered. To see the list, message me with '.lc'.".format(index, len(datapipe.channels)))	
 						return
 						
 					except:	
