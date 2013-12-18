@@ -180,7 +180,7 @@ class DataPipe():
 		self.whitelist		= utils.loadData('whitelist', list)
 		self.admins 		= config.admins + admins
 		self.functions		= config.functions
-		self.channels		= [None]
+		self.channels		= [Channel('Dummy')]
 		self.pluginexit		= []
 		self.pluginloops	= []
 		self.plugins 		= {}

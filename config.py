@@ -5,16 +5,16 @@ import urllib2
 # admins defines who can issue admin-level commands to the bot. Looks like this:
 # admins = ["First Admin", "second admin", "xXx third admin-dono xXX"]
 #please be precise, else python pukes up an error. TIA. 
-admins = 	["Exo", "Kalikrates"]
+admins = 	["Admin1", "Admin Number 2"]
 
 #This is the login infor for the account Cogito runs over.
-account=	"Cogito"
-character=	"Cogito"
-password=	"1ChD3Nk34Ls=!"
+account=	"ACCOUNT"
+character=	"CHARACTER"
+password=	"PASSWORD"
 
 #For channels, make sure you enter their PRECISE title, including any trailing spaces and/or punctuation! 
 #channels=	['Development']
-channels=	['Gay/Bi Male Human(oid)s. ', 'Manly Males of Extra Manly Manliness']
+channels=	['Channel 1. ', 'Second Channel For the Bot']
 
 
 host=		'chat.f-list.net'
