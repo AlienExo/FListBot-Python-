@@ -55,6 +55,7 @@ functions = {
 					".r":				("rainbowText",	1, [0,1]),
 					".say":				("say",			1, [0,1]),
 					".white":			("whitelist",	1, [0,1]),
+					".ignore":			("ignore",		1, [0]),
 					
 					".help":			("help", 		2, [0,1]),
 					".tell":			("tell", 		2, [0,1])

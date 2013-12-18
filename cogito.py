@@ -61,6 +61,7 @@ class Channel():
 		self.lastjoined = []
 		self.whitelist = []
 		self.blacklist = []
+		self.ignoreops = []
 		
 	def userJoined(chan, character):
 		name = getUser(character).name
@@ -174,7 +175,6 @@ class DataPipe():
 		self.character		= config.character
 		self.blacklist		= utils.loadData('blacklist', list)
 		self.helpDict 		= utils.loadData('help', dict)
-		self.ignorelist		= ['Dregan Stouthilt', 'Veran']
 		self.messageDict 	= utils.loadData('{} messages'.format(config.character), dict)
 		#self.usersDict 	= utils.loadData('users', dict)
 		self.whitelist		= utils.loadData('whitelist', list)
@@ -358,13 +358,12 @@ def checkAge(age, char, chan):
 		#	print("\tExpulsion.")
 		#	char.kick(chan)
 		elif char.age ==0:
-			chanusers = getChannel(chan).users
 			chan.userJoined(char.name)
 			print("\tCannot parse.")
 			xadmins = sorted(chan.ops, key=lambda *args: random.random())
 			for x in xadmins:
-				if x in chanusers:
-					if x in datapipe.ignorelist: continue
+				if x in chan.users:
+					if x in chan.ignoreops: continue
 					y = getUser(x)
 					try:
 						if y.status in ['busy', 'dnd']: 
@@ -606,6 +605,15 @@ class FListCommands(threading.Thread):
 		channel.lastjoined=channel.lastjoined[numUsers:]
 			
 	def unban(self, item):pass
+	
+	def ignore(self, item):
+		if not item.source.character.name in item.source.chan.ignoreops:
+			item.source.chan.ignoreops.append(item.source.character.name)
+			self.reply("You have been appended to the ignore list for {} and will no longer be pinged when AgeCheck is active.".format(item.source.channel.name))
+		else:
+			item.source.chan.ignoreops.remove(item.source.character.name)
+			self.reply("You have been removed from the ignore list for {}.".format(item.source.channel.name))
+			
 	
 	def minage(self, item):
 		try:
