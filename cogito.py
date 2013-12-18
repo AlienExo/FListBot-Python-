@@ -180,7 +180,7 @@ class DataPipe():
 		self.whitelist		= utils.loadData('whitelist', list)
 		self.admins 		= config.admins + admins
 		self.functions		= config.functions
-		self.channels		= []
+		self.channels		= [None]
 		self.pluginexit		= []
 		self.pluginloops	= []
 		self.plugins 		= {}
@@ -757,20 +757,20 @@ def parseText(self, msg):
 			msg.params = " ".join(msg.args)
 			#!!! CHANGE TO PARSING SYSTEM FOR CHANNELINDEPENDENT WHATEVERTHEFUCK
 			if msg.source.channel.name == "private": 
-				print ("Parsing for channel index...")
 				msg.access_type = 0
+				print ("Parsing for channel index...")
 				index = None
 				try:
 					index = int(msg.args[-1])
 					msg.args = msg.args [:-1]
 					msg.params = " ".join(msg.args)
-				except ValueError: pass
 				except IndexError: pass
+				except ValueError: pass
 
-				if index:
+				if index is not None:
 					try:	
 						chan = datapipe.channels[index]
-						print("Rerouting PM command '{}' from channel 'private' into '{}'.".format(func, chan.name))
+						print("Index found. Rerouting PM command '{}' from channel 'private' into '{}'.".format(func, chan.name))
 						msg.source.channel = chan
 					except IndexError:
 						self.reply("Command not executed: There is no channel with index {}. There are {} channels registered. To see the list, message me with '.lc'.".format(index, len(datapipe.channels)))	
