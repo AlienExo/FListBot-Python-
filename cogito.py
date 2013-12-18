@@ -503,7 +503,7 @@ class FListCommands(threading.Thread):
 		server_vars[item.args["variable"]]=item.args["value"]
 		if item.args["variable"]=="msg_flood":
 			new = item.args["value"]*1.25
-			print("\tDetected server-side flood control. Self-adjusting: sending output every {} milliseconds.".format(new*100))
+			print("\tDetected server-side flood control. Self-adjusting: sending output every {} milliseconds.".format(new*1000))
 			server_vars['permissions']=1
 			EternalSender.stop()
 			EternalSender.start(new)
@@ -608,7 +608,7 @@ class FListCommands(threading.Thread):
 		try:
 			age = int(item.args[0])
 			item.source.channel.minage = age
-			sendText("Cogito Age Check activated by {}. Alerting administrators to characters below age {}".format(item.source.character.name, age), 1, char=item.source.character)
+			sendText("Cogito Age Check activated by {}. Alerting administrators to characters below age {}".format(item.source.character.name, age), 1, chan=item.source.channel)
 		except ValueError:
 			self.reply("Error: Cannot parse {} as a number.".format(item.args[0]), 0)
 	
