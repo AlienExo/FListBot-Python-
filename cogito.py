@@ -87,7 +87,8 @@ class Channel():
 				self.index = len(datapipe.channels)-1	
 				return
 		datapipe.channels.append(self)
-		self.index = len(datapipe.channels)-1	
+		self.index = len(datapipe.channels)-1
+		print("Joining channel '{}', index {}.".format(self.name, self.index))
 		
 	def part(self):
 		sendRaw("LCH {}".format(self.key))
@@ -551,7 +552,7 @@ class FListCommands(threading.Thread):
 		reply("Command received. Attempting to join '{}'".format(chan.name), 0)
 		chan.join()
 	
-	def part(self, item):
+	def leave(self, item):
 		chan = getChannel(item.params)
 		reply("Command received. Leaving '{}'".format(chan.name), 0)
 		chan.part()
@@ -635,7 +636,8 @@ class FListCommands(threading.Thread):
 			chans = {}
 			for name, chaninst in datapipe.channelDict.items():
 				if (hasattr(chaninst, 'minage') and chaninst.minage!=config.minage) or (len(chaninst.whitelist) > 0): 
-					chaninst.userlist = []
+					chaninst.users = []
+					chaninst.lastjoined = []
 					chaninst.index = []
 					chaninst.key = ""
 					chans[name]=chaninst
@@ -705,6 +707,7 @@ class FListCommands(threading.Thread):
 			
 			
 	def say(self, msg):
+		print msg.source.channel
 		sendText(msg.params, 2, chan=msg.source.channel)
 		
 	def act(self, msg):
