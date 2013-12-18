@@ -374,7 +374,7 @@ def checkAge(age, char, chan):
 							return
 					except: traceback.print_exc()
 		else:
-			print("\tUser {} has passed inspection (Age>{}), claiming to be {} years old.".format(char.name, chan.minage, char.age))
+			print("User {} has passed inspection for {} (Age>{}), claiming to be {} years old.".format(char.name, chan.name, chan.minage, char.age))
 			#sendText("Demonstration: User {} has passed inspection (Age>{}), being {} years old. Apparently.".format(char.name, config.minage, char.age), 0, 'Valorin Petrov')
 			chan.userJoined(char.name)
 			telling(char, chan)
@@ -521,7 +521,7 @@ class FListCommands(threading.Thread):
 		item.source.channel.whitelist.append(candidate)
 		reply("{} has been whitelisted.".format(candidate), item.access_type)	
 		utils.log("{} has been whitelisted for {} by {}.".format(candidate, item.source.channel.name, item.source.character.name))	
-		utils.saveData(datapipe.whitelist, 'whitelist')
+		#utils.saveData(datapipe.whitelist, 'whitelist')
 
 	def blacklist(self, item):
 		candidate = item.params
@@ -625,7 +625,7 @@ class FListCommands(threading.Thread):
 		if e>3:
 			slist[-2]=slist[-2]+item.params[-(e-3):]
 		print len(slist), slist
-		sendText("[color=red]{}[/color][color=orange]{}[/color][color=yellow]{}[/color][color=green]{}[/color][color=cyan]{}[/color][color=blue]{}[/color][color=purple]{}[/color]".format(*slist), 2, chan=config.channels[0])
+		sendText("[color=red]{}[/color][color=orange]{}[/color][color=yellow]{}[/color][color=green]{}[/color][color=cyan]{}[/color][color=blue]{}[/color][color=purple]{}[/color]".format(*slist), 2, chan=item.source.channel)
 		
 	def hibernation(self, item):
 		try:
@@ -634,8 +634,11 @@ class FListCommands(threading.Thread):
 			reactor.stop()
 			chans = {}
 			for name, chaninst in datapipe.channelDict.items():
-				if hasattr(chaninst, 'minage'): chans[name]=chaninst
-				elif hasattr(chanist, 'whitelist'): chans[name]=chaninst
+				if (hasattr(chaninst, 'minage') and chaninst.minage!=config.minage) or (len(chaninst.whitelist) > 0): 
+					chaninst.userlist = []
+					chaninst.index = []
+					chaninst.key = ""
+					chans[name]=chaninst
 			utils.saveData(chans, 'channels')
 			utils.saveData(utils.statsDict, '{} stats'.format(config.character))
 			utils.saveData(admins, 'admins')
@@ -707,9 +710,6 @@ class FListCommands(threading.Thread):
 	def act(self, msg):
 		sendText(msg.params, 3, chan=msg.source.channel)
 		
-
-	
-
 class FListProtocol(WebSocketClientProtocol, FListCommands):
 	def __init__(self):
 		datapipe.FListProtocol = self
@@ -722,6 +722,7 @@ class FListProtocol(WebSocketClientProtocol, FListCommands):
 
 	def onMessage(self, msg, binary):
 		msg = msg.decode('ascii', 'ignore')
+		msg = str(msg)
 		message = Message(msg)
 		recvQueue.put((message, self))
 		
