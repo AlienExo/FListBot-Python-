@@ -347,37 +347,45 @@ def checkAge(age, char, chan):
 	try:
 		chan=getChannel(chan)
 		char.age = age
-		if (char.name in chan.whitelist) or (char.name in datapipe.whitelist): 
-			print ("Whitelisted user.")
-			chan.userJoined(char.name)
-			return
-		if char.age<chan.minage and char.age!=0:
-			sendText("Cogito has detected an user [color=red]below the room's minimum age:[/color] [user]{}[/user].".format(char.name), 2, chan=chan)
-			banter = eval(random.choice(banBanter))
-			sendText(banter, 2, char.name, chan.key)
-		#	print("\tExpulsion.")
-		#	char.kick(chan)
-		elif char.age ==0:
-			chan.userJoined(char.name)
-			print("\tCannot parse.")
-			xadmins = sorted(chan.ops, key=lambda *args: random.random())
-			for x in xadmins:
-				if x in chan.users:
-					if x in chan.ignoreops: continue
-					y = getUser(x)
-					try:
-						if y.status in ['busy', 'dnd']: 
-							continue
-						else:
-							print("\tAdministrator {} found, reporting user to be checked.".format(y.name))
-							sendText("Cannot automatically determine age of user '[user]{}[/user]'. Please verify manually: [user]{}[/user] [sub]To add user to whitelist, tell me '.white {} {}' in a PM. If you tell me in the channel, leave the number out.[/sub]".format(char.name, char.name, char.name, chan.index), 0, y.name)
-							return
-					except: traceback.print_exc()
-		else:
+		if char.age>=chan.minage:
 			print("User {} has passed inspection for {} (Age>{}), claiming to be {} years old.".format(char.name, chan.name, chan.minage, char.age))
 			#sendText("Demonstration: User {} has passed inspection (Age>{}), being {} years old. Apparently.".format(char.name, config.minage, char.age), 0, 'Valorin Petrov')
 			chan.userJoined(char.name)
 			telling(char, chan)
+			return
+			
+		if (char.name in chan.whitelist) or (char.name in datapipe.whitelist): 
+			print ("Whitelisted user.")
+			chan.userJoined(char.name)
+			telling(char, chan)
+			return
+			
+		xadmins = sorted(chan.ops, key=lambda *args: random.random())
+		for x in xadmins:
+			if x in chan.users:
+				if x in chan.ignoreops: continue
+				y = getUser(x)
+				try:
+					if y.status in ['busy', 'dnd']: 
+						continue
+					else:
+						print("\tAdministrator {} found, reporting user to be checked.".format(y.name))
+				except: traceback.print_exc()
+						
+						
+		if char.age<chan.minage and char.age!=0:
+			sendText("Cogito has detected an user [color=red]below the room's minimum age:[/color] [user]{}[/user].".format(char.name), 0, char=y)
+			utils.log("Underage user {} detected in {}.".format(char.name, chan.name))
+			banter = eval(random.choice(banBanter))
+			sendText(banter, 2, char, chan)
+		#	print("\tExpulsion.")
+		#	char.kick(chan)
+		
+		elif char.age ==0:
+			chan.userJoined(char.name)
+			print("\tCannot parse.")
+			sendText("Cannot automatically determine age of user '[user]{}[/user]'. Please verify manually: [user]{}[/user] [sub]To add user to the channel's whitelist, reply '.white {} {}' in a PM. If you tell me in the channel, leave the number out.[/sub]".format(char.name, char.name, char.name, chan.index), 0, char=y)
+			return
 			
 	except:
 		traceback.print_exc()
