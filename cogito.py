@@ -25,6 +25,7 @@ import yaml
 from twisted.internet import defer, reactor, task, threads
 from autobahn.websocket import WebSocketClientFactory, WebSocketClientProtocol, connectWS
 
+ignore_commands = ['FLN', 'STA', 'NLN', 'PIN', 'MSG', 'PRI', 'TPN', 'LIS', 'ORS', 'IDN', 'VAR', 'CDS', 'COL', 'ICH', 'JCH', 'LCH', 'CON', 'HLO', 'ERR']
 opener 			= urllib2.build_opener()
 opener.addheaders.append(('Cookie', 'warning=1'))
 startuptime 	= datetime.datetime.now()
@@ -193,8 +194,8 @@ class DataPipe():
 	def saveData(self, data, file):
 		utils.saveData(data, file)
 
-	def reply(self, message, item):
-		reply(message, item)
+	def reply(self, message, item, path_override=None):
+		reply(message, item, path_override)
 		
 	def writeLog(self, text):
 		utils.log(text, 1)
@@ -437,14 +438,12 @@ class FListCommands(threading.Thread):
 		allAdmins.remove(item.args['character'])
 		
 	def ERR(self, item):
-		if item.args['message']=='This command requires that you have logged in.':
-			sys.exit(1)
 		utils.log("FList Error: Code {}. '{}'".format(item.args['number'], item.args['message']))
 				
 	def FLN(self, item): pass		
 	def FRL(self, item): pass
 	
-	def HLO(self, item): print("Connection established...")
+	def HLO(self, item): utils.log("Connection established...")
 			
 	def ICH(self, item):
 		chan = getChannel(item.args['channel'])
@@ -452,7 +451,6 @@ class FListCommands(threading.Thread):
 		chars = item.args['users']
 		for x in chars:
 			x=getUser(x)
-			if not x.name in chan.users: chan.users.append(x.name)
 			if not x.name in chan.users: chan.users.append(x.name)
 
 	def IDN(self, item): pass
@@ -681,7 +679,7 @@ class FListCommands(threading.Thread):
 		try:
 			print msg.args[0]
 			if msg.args[0]:
-				reply(datapipe.helpDict[msg.args[0]], 0)
+				reply(datapipe.helpDict[msg.args[0]], msg, 0)
 
 		except KeyError:
 			reply("No entry for command '{}'. Please check your syntax and try again.".format(msg.args[1]) , 0)
@@ -700,7 +698,7 @@ class FListCommands(threading.Thread):
 	def tell(self, msg):
 		sender = msg.source.character.name
 		if msg.params.find(':')==-1:
-			reply("You need to put a ':' after the recipient's name, darling.", 1)
+			reply("You need to put a ':' after the recipient's name, darling.", msg, 1)
 			return
 		recipient, message = msg.params.split(':')
 		sendtime = datetime.datetime.now()
@@ -713,13 +711,13 @@ class FListCommands(threading.Thread):
 		except KeyError:
 			messages = []
 		if len(messages)>4:
-			reply("[color=green]{} already has {} messages waiting. Message not added.[/color]".format(recipient, personality.spokenNumber(config.messagelimit)), 2)
+			reply("[color=green]{} already has {} messages waiting. Message not added.[/color]".format(recipient, personality.spokenNumber(config.messagelimit)), msg, 2)
 			return
 		else:	
 			messages.append(data)
 			datapipe.messageDict[recipient.lower()]=messages
 			utils.saveData(datapipe.messageDict, '{} messages'.format(config.character))
-			reply("[color=green]Message to {} saved.[/color]".format(recipient), 2)
+			reply("[color=green]Message to {} saved.[/color]".format(recipient), msg, 2)
 			
 			
 	def say(self, msg):
@@ -948,7 +946,7 @@ def mainloop():
 		
 		item, self = recvQueue.get_nowait()
 		# datapipe.source = item.source
-		if item.cmd not in config.ignore_commands: print("{} -- {} {}".format(time.strftime("%c"), item.cmd, item.args))
+		if item.cmd not in ignore_commands: print("{} -- {} {}".format(time.strftime("%c"), item.cmd, item.args))
 		if datapipe.personality != None: 
 			datapipe.personality.code.handle(self, item.cmd, item.params) 
 		if item.cmd not in ['MSG', 'PRI']:

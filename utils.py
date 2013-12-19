@@ -9,7 +9,7 @@ import yaml
 
 def log(text, ltype=2):
 	"""Writes to '<BOT>.log' (type 0), '<BOT> EX.log' (type 1), or both (type 2)"""
-	text="{!s} -- {}\n".format(time.strftime("%c"), text)
+	text="{!s} -- {}".format(time.strftime("%c"), text)
 	print(text)
 	try:
 		if ltype == 0:

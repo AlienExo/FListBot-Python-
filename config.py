@@ -57,4 +57,3 @@ functions = {
 					".help":			("help", 		2, [0,1]),
 					".tell":			("tell", 		2, [0,1])
 					}
-ignore_commands = ['FLN', 'STA', 'NLN', 'PIN', 'MSG', 'PRI', 'TPN', 'LIS', 'ORS', 'IDN', 'VAR', 'CDS', 'COL', 'ICH', 'JCH', 'LCH']
