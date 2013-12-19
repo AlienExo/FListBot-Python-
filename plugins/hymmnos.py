@@ -1,4 +1,5 @@
 #1dbdc6da34094db4e661ed43aac83d91
+#1dbdc6da34094db4e661ed43aac83d91
 #!/usr/bin/python
 import urllib
 import urllib2
@@ -49,7 +50,7 @@ def hymmnos(self, msgobj):
 			a += "({}) ".format(x)
 		a = a.rstrip()
 		#self.writeLog ("Translated: \"{} : {}\"".format(words, a))
-		self.reply(a, 1)
+		self.reply(a, msgobj)
 
 		
 	except Exception as error:
@@ -59,7 +60,7 @@ def hymmnos(self, msgobj):
 def __init__(self):
 	try:
 		self.functions[".h"]=("hymmnos", 2, [0,1,2])
-		self.helpDict[".h"]="Translates from the conlang 'Hymmnos', which Ustlooz uses, to English. Usage: .h <Word/sentence>."
+		self.helpDict[".h"]="Translates from the conlang Hymmnos to English. Usage: .h <Word/sentence>."
 	except:
 		self.writeLog("Error initializing plugin 'hymmnos'")
 		traceback.print_exc()

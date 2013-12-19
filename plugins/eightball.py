@@ -24,7 +24,7 @@ Outlook not so good.
 Very doubtful.""".split('\n')
 
 def eightball(self, msgobj):
-	self.reply(choice(phrases))
+	self.reply(choice(phrases), msgobj)
 	
 def __init__(self):
 	try:

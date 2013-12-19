@@ -53,7 +53,7 @@ def horoscope(self, msgobj):
 				month = number+1
 				FLAG = True	
 		if not FLAG:	
-			self.reply("Unable to parse '{}' as month. Syntax: .hs DD.MM".format(month), 0)
+			self.reply("Unable to parse '{}' as month. Syntax: .hs DD.MM".format(month), msgobj, 0)
 			return
 			
 	if month>12:
@@ -88,7 +88,7 @@ def horoscope(self, msgobj):
 	horoscope = horoscope.replace('{RSIGN}', rsign)
 	
 
-	self.reply("[{}]: {}".format(sign, horoscope), 1)
+	self.reply("[{}]: {}".format(sign, horoscope), msgobj)
 	
 def __init__(self):
 	try:

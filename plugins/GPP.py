@@ -30,7 +30,7 @@ def loop(self, msgobj):
 			for x in self.patterns:
 				if x[0].search(msgobj.params):
 					if x[2] == 'rand':
-						self.reply(random.choice(randquotes), 2)
+						self.reply(random.choice(randquotes), msgobj, 2)
 						break
 					else:	
 						msg = random.choice(x[1])
@@ -44,9 +44,9 @@ def loop(self, msgobj):
 							req = req.replace('me', 'you')
 							req = req.strip()
 							req.capitalize()
-							self.reply(msg.replace('{REQUEST}', req), 1)	
+							self.reply(msg.replace('{REQUEST}', req), msgobj, 1)	
 							break
-						self.reply(msg)					
+						self.reply(msg, msgobj)					
 
 def __init__(self):
 	try:		

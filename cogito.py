@@ -1,17 +1,6 @@
 #when leaving channel, replace datapipe.channels value with Null to prevent 1 becomine 2, 2 becoming 3.
 #add a datapipe.ignorelist you can actually add/remove from
 
-# Traceback (most recent call last):
-  # File "C:\Users\kiki\Projects\cogito\cogito.py", line 620, in hibernation
-    # chans = {}
-# ValueError: too many values to unpack
-
-#rewrite to use a per-channel .minage rather than config.minage. Perhaps a .setage function.
-#export channels with .minage on shutdown, fuck all others.
-	#import from file. for each object, join it and import data.
-	
-	
-#Please note: All commands are executed in the channel they are received from. In case of a PM, you may specify a channel via its ID number. E.g. .kick 1 A Bad Roleplayer will kick A Bad RolePlayer from channel #1. To get a list of IDs and channels, use the command '.lc'. A command without an ID will be parsed as the 'default' channel, config.channels[0]
 
 import config
 import datetime
@@ -67,7 +56,7 @@ class Channel():
 		name = getUser(character).name
 		chan.users.append(name)
 		chan.lastjoined.append(name)
-		print("\tAppended {} to {}'s last joined list. Current length: {}".format(name, chan.name, len(chan.lastjoined)))
+		print("Appended {} to {}'s last joined list. Current length: {}".format(name, chan.name, len(chan.lastjoined)))
 				
 	def userLeft(chan, character):
 		name = getUser(character).name
@@ -92,7 +81,7 @@ class Channel():
 		print("Joining channel '{}', index {}.".format(self.name, self.index))
 		
 	def part(self):
-		sendRaw("LCH {}".format(self.key))
+		sendRaw("LCH {}".format(json.dumps({'channel':self.key})))
 		datapipe.channels[datapipe.channels.index(self)]=None
 		
 def userFromFListData(name, data):
@@ -380,7 +369,7 @@ def checkAge(age, char, chan):
 						
 		if char.age<chan.minage and char.age!=0:
 			sendText("User [color=red]below {}'s minimum age of {}:[/color] [user]{}[/user].".format(chan.name, chan.minage, char.name), 0, char=y)
-			utils.log("User {} under minimum age of {} for {}.".format(char.name, chan.minage, chan.name))
+			utils.log("User {} under minimum age of {} for {}. Alerting {}.".format(char.name, chan.minage, chan.name, y.name))
 			banter = eval(random.choice(banBanter))
 			sendText(banter, 2, char, chan)
 		#	print("\tExpulsion.")
@@ -413,7 +402,7 @@ class FListCommands(threading.Thread):
 		#for op in ops:
 		#	datapipe.admins.append(op)
 		
-	def CDS(self, item): pass
+	def CDS(self, item):pass
 	
 	def CKU(self, item):
 		# banned = getUser(item.args[''])
@@ -426,8 +415,8 @@ class FListCommands(threading.Thread):
 		chan = getChannel(item.args['channel'])
 		for op in ops:
 			if not op in chan.ops: 
-				chan.ops.append(str(op))
-				allAdmins.append(str(op))
+				chan.ops.append(op)
+				allAdmins.append(op)
 		print ("Channel operators for "+chan.name +": "+ str(chan.ops))
 		
 	def CON(self, item):
@@ -448,23 +437,23 @@ class FListCommands(threading.Thread):
 		allAdmins.remove(item.args['character'])
 		
 	def ERR(self, item):
-		utils.log("ERROR: {}".format(item.args))
 		if item.args['message']=='This command requires that you have logged in.':
 			sys.exit(1)
+		utils.log("FList Error: Code {}. '{}'".format(item.args['number'], item.args['message']))
 				
 	def FLN(self, item): pass		
 	def FRL(self, item): pass
+	
 	def HLO(self, item): print("Connection established...")
 			
 	def ICH(self, item):
-		chan = item.args['channel']
-		chan = getChannel(chan)
+		chan = getChannel(item.args['channel'])
 		chan.users=[]
 		chars = item.args['users']
 		for x in chars:
 			x=getUser(x)
 			if not x.name in chan.users: chan.users.append(x.name)
-		#print "\tUserlist for ", chan.name, "completed: ", chan.users
+			if not x.name in chan.users: chan.users.append(x.name)
 
 	def IDN(self, item): pass
 	def IGN(self, item): pass
@@ -488,6 +477,7 @@ class FListCommands(threading.Thread):
 		datapipe.lastseenDict[char.name]=datetime.datetime.now()
 					
 	def LIS(self, item):pass
+	def LRP(self, item):pass
 	def NLN(self, item):pass
 	
 	def ORS(self, item):
@@ -529,6 +519,7 @@ class FListCommands(threading.Thread):
 		reply("List of active channels and their indices for channel-specific commands:", item, 0)
 		for num, chan in enumerate(datapipe.channels):
 			if num==0: continue
+			if chan == None: continue
 			reply("#{}: {}".format(num, chan.name), item, 0)
 			
 	def whitelist(self, item):
@@ -635,7 +626,7 @@ class FListCommands(threading.Thread):
 		try:
 			age = int(item.args[0])
 			item.source.channel.minage = age
-			sendText("Cogito Age Check activated by {}. Alerting administrators to characters below age {}".format(item.source.character.name, age), 1, chan=item.source.channel)
+			sendText("Cogito Age Check activated by {}. Alerting administrators to characters below age {}".format(item.source.character.name, age), item.access_type, chan=item.source.channel)
 		except ValueError:
 			reply("Error: Cannot parse {} as a number.".format(item.args[0]), item, 0)
 	
@@ -732,7 +723,6 @@ class FListCommands(threading.Thread):
 			
 			
 	def say(self, msg):
-		print msg.source.channel
 		sendText(msg.params, 2, chan=msg.source.channel)
 		
 	def act(self, msg):

@@ -13,7 +13,7 @@ def choice(self, msgobj):
 		self.reply("There has been an error in the Choice Module. We apologize.", 0)
 	else:
 		choice = choice.strip()
-		self.reply(choice, self.access_type)
+		self.reply(choice, msgobj)
 	
 def __init__(self):
 	try:

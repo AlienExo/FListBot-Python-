@@ -38,28 +38,28 @@ def NameGen (n_ngrams, n_names):
 		namelist.append(name)
 	return namelist
 
-def namegen(self):
-	if self.args[0]=="-r":
-		self.args=self.args[1:]
+def namegen(self, msg):
+	if msg.args[0]=="-r":
+		msg.args=msg.args[1:]
 		names=[]
-		try: a = int(self.args[0])
+		try: a = int(msg.args[0])
 		except ValueError: a=1
 		for x in range(a):
 			names.append(' '.join((random.choice(self.firstnames), random.choice(self.lastnames))))
-		self.say(', '.join(names), 0)
+		self.reply(', '.join(names), msg)
 	else:
 		try:
 			n_ngrams = int(self.args[0])
 			n_names = int(self.args[1])
 			if n_ngrams>10 or n_names>10:
-				self.say("Name generation for parameters over 10 is locked out.", 0)
+				self.reply("Name generation for parameters over 10 is locked out.", msg, 0)
 				return
 				
 			if n_ngrams < 3:
-				self.say("Names shorter than three are not supported.", 0)
+				self.reply("Names shorter than three are not supported.", msg, 0)
 				return
 		except ValueError:
-			self.say("Syntax error - {} and {} not recognized as numbers".format(self.args[0], self.args[1]), 0)
+			self.reply("Syntax error - {} and {} not recognized as numbers".format(self.args[0], self.args[1]), msg, 0)
 			return
 		
 		try:
@@ -67,7 +67,7 @@ def namegen(self):
 			for x in names:
 				x = x.capitalize()
 			names = ", ".join(names).rstrip(',')
-			self.say(str(names), 0)
+			self.reply(str(names), msg)
 			
 		except Exception as error:
 			self.writeLog ("Error in Namegen: {}".format(error), 1)

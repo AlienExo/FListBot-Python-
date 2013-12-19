@@ -2,8 +2,8 @@
 import traceback
 import random
 
-def lottery(self): #callable main function
-	self.say(random.choice(self.channel.users), 2)
+def lottery(self, msg): #callable main function
+	self.say(random.choice(self.channel.users), msg, 2)
 		
 def __init__(self):
 	try:

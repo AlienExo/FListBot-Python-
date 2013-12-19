@@ -51,14 +51,14 @@ def tarot(self, msgobj):
 		a = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eight', 'ninth', 'tenth']
 		c = 0
 		
-		self.reply("Your have requested the {} spread, containing {} card(s).".format(spread[1], spread[0]), 2)
+		self.reply("Your have requested the {} spread, containing {} card(s).".format(spread[1], spread[0]), msgobj, 2)
 		msg = ""
 		while c < len(cards):
 			msg += "The {} card, indicating {}, is {}.".format(a[c], spread[2][c], cards[c])
 			msg += " | "
 			c+=1
-		self.reply(msg)
-		self.reply("For further information about any card, type '.t -e [Card Title]', e.g. '.t -e The Fool'.", 0)
+		self.reply(msg, msgobj)
+		self.reply("For further information about any card, type '.t -e [Card Title]', e.g. '.t -e The Fool'.", msgobj, 0)
 		
 	except IndexError:
 		self.reply("Arguments specified incorrectly. Usage: '.t {}-{} <spread>', or '.t -e <explanation> [Card Title]'; e.g. '.t 0' or '.t -e The Fool'.".format(range(len(spreads))[0], range(len(spreads))[-1]))

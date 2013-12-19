@@ -16,23 +16,23 @@ def lastseen(self, msgobj, mode=0, mrec=0):
 		if msgobj.params in msgobj.source.channel.users:
 			action = random.choice(actions)
 			thing = random.choice(things)
-			self.reply="{} \"{} {}\"".format(action, msgobj.params, random.choice(things))
+			reply="{} \"{} {}\"".format(action, msgobj.params, random.choice(things))
 			if msgobj.params==user:
-				self.reply("You are right in front of me.")
+				self.reply("You are right in front of me.", msgobj)
 				return
 			if msgobj.params==self.character:
 				reply = reply.replace(self.character, "I")
 				reply = reply.replace(" is", "'m")
 				reply = reply.replace("has", "have")
 			reply=reply.replace("NAME", user)
-			self.reply(reply, 3)
+			self.reply(reply, msgobj, 3)
 			return
 		
 		else:
 			try:
 				data = self.lastseenDict[msgobj.params]
 				delta = datetime.datetime.now()-data
-				self.say("{!s} was last seen on {}; {} ago.".format(msgobj.params, data.strptime("%A, %d.%m.%Y %H:%M"), utils.timeCalc(delta)[0]), msgobj.access_type)
+				self.reply("{!s} was last seen on {}; {} ago.".format(msgobj.params, data.strptime("%A, %d.%m.%Y %H:%M"), utils.timeCalc(delta)[0]), msgobj)
 				
 			except:
 				traceback.print_exc()
@@ -42,7 +42,7 @@ def lastseen(self, msgobj, mode=0, mrec=0):
 				return
 			
 	except KeyError:
-		self.reply("Unable to comply: No entry for subject '{!s}' found. Please make sure the name is properly spelled and capitalized.".format(msgobj.params), 0)
+		self.reply("Unable to comply: No entry for subject '{!s}' found. Please make sure the name is properly spelled and capitalized.".format(msgobj.params), msgobj, 0)
 		
 	except:
 		traceback.print_exc()
