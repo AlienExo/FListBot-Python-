@@ -519,8 +519,9 @@ class FListCommands(threading.Thread):
 			EternalSender.start(new)
 		
 	def listIndices(self, item):
-		self.reply("List of active channels and their indices for channel-specific commands:")
+		self.reply("List of active channels and their indices for channel-specific commands:", 0)
 		for num, chan in enumerate(datapipe.channels):
+			if num==0: continue
 			self.reply("#{}: {}".format(num, chan.name), 0)
 			
 	def whitelist(self, item):
@@ -741,7 +742,6 @@ class FListProtocol(WebSocketClientProtocol, FListCommands):
 
 	def onMessage(self, msg, binary):
 		msg = msg.decode('ascii', 'ignore')
-		msg = str(msg)
 		message = Message(msg)
 		recvQueue.put((message, self))
 		

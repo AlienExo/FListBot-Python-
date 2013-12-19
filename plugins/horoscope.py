@@ -48,21 +48,26 @@ def horoscope(self, msgobj):
 	except ValueError:
 		month = month.capitalize()
 		FLAG = False
-		for x in months:
-			if x == month:
-				month = months.index(x)+1
-				FLAG = True
+		for number, refmonth in enumerate(months):
+			if month == refmonth:
+				month = number+1
+				FLAG = True	
 		if not FLAG:	
 			self.reply("Unable to parse '{}' as month. Syntax: .hs DD.MM".format(month), 0)
+			return
+			
 	if month>12:
 		sday = day
 		day = month
 		month = sday
+		
 	day=day+mon_len[month]
+	
 	for x in signs:
-		if abs(day-x[0])<31:
+		if day<=x[0]:
 			sign = x[1]
-	print sign
+			break
+	print day, sign
 	horoscope = []
 	for x in range(2):
 		horoscope.append(random.choice(self.horoscopes))
