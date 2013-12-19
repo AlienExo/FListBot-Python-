@@ -24,9 +24,6 @@ version=	"1.5.3.7"
 #misc settings.
 banter = True
 banterchance = 1.0
-bashlim = 	15
-flood_pause = 0.75
-minage = 18
 min_ratio = 0.75
 
 #Format: Command : (function_name, level required for access, message type required for access.)
