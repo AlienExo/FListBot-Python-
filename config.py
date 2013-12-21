@@ -22,7 +22,7 @@ port=		9722	#9722 - Real | 8722 - Dev
 version=	"1.5.3.7"
 
 #misc settings.
-banter = True
+banter = False
 banterchance = 1.0
 min_ratio = 0.75
 
@@ -52,7 +52,7 @@ functions = {
 					".r":				("rainbowText",	1, [0,1]),
 					".say":				("say",			1, [0,1]),
 					".white":			("whitelist",	1, [0,1]),
-					".ignore":			("ignore",		1, [0]),
+					".ignore":			("ignore",		1, [0,1]),
 					
 					".help":			("help", 		2, [0,1]),
 					".tell":			("tell", 		2, [0,1])

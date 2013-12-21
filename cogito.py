@@ -45,6 +45,7 @@ class Channel():
 		self.name=name
 		self.key = ckey if ckey is not None else self.name
 		self.minage = 18
+		self.checkAge = False
 		self.index = None
 		self.users=[]
 		self.ops =[]
@@ -57,7 +58,7 @@ class Channel():
 		name = getUser(character).name
 		chan.users.append(name)
 		chan.lastjoined.append(name)
-		print("Appended {} to {}'s last joined list. Current length: {}".format(name, chan.name, len(chan.lastjoined)))
+		print("Appended {} to {}'s last joined list. Current length: {}\n".format(name, chan.name, len(chan.lastjoined)))
 				
 	def userLeft(chan, character):
 		name = getUser(character).name
@@ -342,7 +343,7 @@ def checkAge(age, char, chan):
 		chan=getChannel(chan)
 		char.age = age
 		if char.age>=chan.minage:
-			print("User {} has passed inspection for {} (Age>{}), claiming to be {} years old.\n".format(char.name, chan.name, chan.minage, char.age))
+			print("User {} has passed inspection for {} (Age>{}), claiming to be {} years old.".format(char.name, chan.name, chan.minage, char.age))
 			#sendText("Demonstration: User {} has passed inspection (Age>{}), being {} years old. Apparently.".format(char.name, config.minage, char.age), 0, 'Valorin Petrov')
 			chan.userJoined(char.name)
 			telling(char, chan)
@@ -439,8 +440,15 @@ class FListCommands(threading.Thread):
 		
 	def ERR(self, item):
 		utils.log("FList Error: Code {}. '{}'".format(item.args['number'], item.args['message']))
+		if item.args['message']=="This command requires that you have logged in.":
+			sendRaw("IDN {}".format(json.dumps({"method":"ticket","account":config.account,"character":"Cogito","ticket":datapipe.key,"cname":"cogito","cversion":config.version})))
 				
-	def FLN(self, item): pass		
+	def FLN(self, item):
+		char = getUser(item.args['character'])
+		for chan in datapipe.channelDict.values():
+			if char.name in chan.users:
+				chan.leave(char)
+		
 	def FRL(self, item): pass
 	
 	def HLO(self, item): utils.log("Connection established...")
@@ -461,7 +469,8 @@ class FListCommands(threading.Thread):
 		chan = getChannel(item.args['channel'])
 		print("User {} has joined '{}'.".format(char.name, chan.name))
 		if char.name == config.character: return
-		if char.name in datapipe.blacklist: char.kick(char)
+		if char.name in chan.blacklist: char.kick(char)
+		if chan.checkAge == False: return
 		d = threads.deferToThread(FListAPI.getAge, char.name)
 		d.addCallback(checkAge, char=char, chan=chan)
 						
@@ -470,13 +479,14 @@ class FListCommands(threading.Thread):
 		if chan.name == "Frontpage":
 			return
 		char = getUser(item.args['character'])
-		print("User {} has left '{}'.".format(char.name, chan.name))
+		utils.log("User {} has left '{}'.".format(char.name, chan.name))
 		chan.userLeft(char)
 		datapipe.lastseenDict[char.name]=datetime.datetime.now()
 					
 	def LIS(self, item):pass
 	def LRP(self, item):pass
 	def NLN(self, item):pass
+	def RLL(self, item):pass
 	
 	def ORS(self, item):
 		try:
@@ -623,6 +633,10 @@ class FListCommands(threading.Thread):
 	def minage(self, item):
 		try:
 			age = int(item.args[0])
+			if age == 0:
+				item.source.channel.checkAge = False
+				sendText("Cogito Age Check deactivated by {}.".format(item.source.character.name), item.access_type, chan=item.source.channel)
+				return
 			item.source.channel.minage = age
 			sendText("Cogito Age Check activated by {}. Alerting administrators to characters below age {}".format(item.source.character.name, age), item.access_type, chan=item.source.channel)
 		except ValueError:
@@ -637,8 +651,8 @@ class FListCommands(threading.Thread):
 		d,e = divmod(a, 6)
 		for x in xrange(0, a, d):
 			slist.append(item.params[x:x+d])
-		if e>3:
-			slist[-2]=slist[-2]+item.params[-(e-3):]
+		if e>0:
+			slist.append(item.params[-e:])
 		print len(slist), slist
 		sendText("[color=red]{}[/color][color=orange]{}[/color][color=yellow]{}[/color][color=green]{}[/color][color=cyan]{}[/color][color=blue]{}[/color][color=purple]{}[/color]".format(*slist), 2, chan=item.source.channel)
 		
@@ -697,10 +711,12 @@ class FListCommands(threading.Thread):
 
 	def tell(self, msg):
 		sender = msg.source.character.name
-		if msg.params.find(':')==-1:
+		a = msg.params.find(':')
+		if a ==-1:
 			reply("You need to put a ':' after the recipient's name, darling.", msg, 1)
 			return
-		recipient, message = msg.params.split(':')
+		sender = msg.params[:a]
+		recipient = msg.params[a:]
 		sendtime = datetime.datetime.now()
 		data = (sender, message, sendtime)
 		try:
@@ -733,7 +749,7 @@ class FListProtocol(WebSocketClientProtocol, FListCommands):
 	def onOpen(self):
 		datapipe.key = FListAPI.getKey()
 		sendRaw("IDN {}".format(json.dumps({"method":"ticket","account":config.account,"character":"Cogito","ticket":datapipe.key,"cname":"cogito","cversion":config.version})))
-		sendRaw("LCH {}".format(json.dumps({'channel':'Frontpage'})))
+		#sendRaw("LCH {}".format(json.dumps({'channel':'Frontpage'})))
 		sendRaw("ORS")
 
 	def onMessage(self, msg, binary):

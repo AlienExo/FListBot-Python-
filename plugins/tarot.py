@@ -36,7 +36,7 @@ def tarot(self, msgobj):
 	try:
 	
 		if msgobj.args[0]=="-q":
-			self.say("{}".format(deck[random.choice(deck.keys())][0]), 2)
+			self.say("{}".format(deck[random.choice(deck.keys())][0]), msgobj, 2)
 			return
 		
 		cards=[]
@@ -45,7 +45,7 @@ def tarot(self, msgobj):
 			card = random.choice(deck.keys())
 			if not card in cards: cards.append(card)
 		if spread[0]==1: 
-			self.reply("{} - {}".format(card, deck[card][0]), 2)
+			self.reply("{} - {}".format(card, deck[card][0]), msgobj, 2)
 			return
 		
 		a = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eight', 'ninth', 'tenth']
@@ -61,7 +61,7 @@ def tarot(self, msgobj):
 		self.reply("For further information about any card, type '.t -e [Card Title]', e.g. '.t -e The Fool'.", msgobj, 0)
 		
 	except IndexError:
-		self.reply("Arguments specified incorrectly. Usage: '.t {}-{} <spread>', or '.t -e <explanation> [Card Title]'; e.g. '.t 0' or '.t -e The Fool'.".format(range(len(spreads))[0], range(len(spreads))[-1]))
+		self.reply("Arguments specified incorrectly. Usage: '.t {}-{} <spread>', or '.t -e <explanation> [Card Title]'; e.g. '.t 0' or '.t -e The Fool'.".format(range(len(spreads))[0], range(len(spreads))[-1]), msgobj)
 		traceback.print_exc()
 	
 	except ValueError:
@@ -69,12 +69,12 @@ def tarot(self, msgobj):
 			try:
 				print self.params
 				card = deck["[{}]".format(" ".join(msgobj.args[1:]))]
-				self.reply("{}: {} [{}]".format(msgobj.args[1], card[1], card[2]))
+				self.reply("{}: {} [{}]".format(msgobj.args[1], card[1], card[2]), msgobj)
 			except ValueError:
-				self.reply("Error: No card named '{}'.".format(msgobj.args[1]))
+				self.reply("Error: No card named '{}'.".format(msgobj.args[1]), msgobj)
 	
 	except KeyError:
-		self.reply("{} is not a valid number for a spread. Spreads range from {} to {}".format(msgobj.args[0], range(len(spreads))[0], range(len(spreads))[-1]))
+		self.reply("{} is not a valid number for a spread. Spreads range from {} to {}".format(msgobj.args[0], range(len(spreads))[0], range(len(spreads))[-1]),msgobj)
 		traceback.print_exc()
 
 def __init__(self):
