@@ -13,13 +13,7 @@ loginAPI =	"http://www.f-list.net/json/getApiTicket.php"
 #Returns JSON with: 
 	#datetime_changed, pageviews, name, created, BIG FAT DESCRIPTION.
 		#description COOOOULD be parsed for colors/height/size/whatevs but FUCK THAT	
-		
-def parseJSON(data):
-	pass
-	
-def parseHTML(data):
-	pass
-		
+				
 def getCharProfile(character):
 	resp = json.load(urllib2.urlopen("http://www.f-list.net/json/api/character-get.php", urlencode({'name':character, 'warning':1})))
 	if u'description' in resp['character']: del resp['character'][u'description']

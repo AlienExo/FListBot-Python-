@@ -43,7 +43,7 @@ functions = {
 					".minage":			("minage",		0, [0,1]),
 					".op":				("op", 			0, [0,1]),
 					
-					".a":				("act",			1, [0,1]),
+					".act":				("act",			1, [0,1]),
 					".ban":				("ban", 		1, [0,1]),
 					".black":			("blacklist",	1, [0,1]),
 					".kick":			("kick",		1, [0,1]),

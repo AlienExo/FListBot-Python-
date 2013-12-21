@@ -36,7 +36,7 @@ def tarot(self, msgobj):
 	try:
 	
 		if msgobj.args[0]=="-q":
-			self.say("{}".format(deck[random.choice(deck.keys())][0]), msgobj, 2)
+			self.reply("{}".format(deck[random.choice(deck.keys())][0]), msgobj, 2)
 			return
 		
 		cards=[]
@@ -67,9 +67,9 @@ def tarot(self, msgobj):
 	except ValueError:
 		if msgobj.args[0]=="-e":
 			try:
-				print self.params
-				card = deck["[{}]".format(" ".join(msgobj.args[1:]))]
-				self.reply("{}: {} [{}]".format(msgobj.args[1], card[1], card[2]), msgobj)
+				card = "[{}]".format(" ".join(msgobj.args[1:]))
+				info = deck[card]
+				self.reply("{}: {} [{}]".format(card, " ".join(info[:-1]), info[-1]), msgobj)
 			except ValueError:
 				self.reply("Error: No card named '{}'.".format(msgobj.args[1]), msgobj)
 	

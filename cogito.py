@@ -44,8 +44,7 @@ class Channel():
 	def __init__(self, name, ckey=None):
 		self.name=name
 		self.key = ckey if ckey is not None else self.name
-		self.minage = 18
-		self.checkAge = False
+		self.minage = 0
 		self.index = None
 		self.users=[]
 		self.ops =[]
@@ -440,18 +439,22 @@ class FListCommands(threading.Thread):
 		
 	def ERR(self, item):
 		utils.log("FList Error: Code {}. '{}'".format(item.args['number'], item.args['message']))
-		if item.args['message']=="This command requires that you have logged in.":
-			sendRaw("IDN {}".format(json.dumps({"method":"ticket","account":config.account,"character":"Cogito","ticket":datapipe.key,"cname":"cogito","cversion":config.version})))
-				
+		# if item.args['message']=="This command requires that you have logged in.":
+			# print("Fixing malformed login sequence...")
+			# reactor.callLater(1, sendRaw, "IDN {}".format(json.dumps({"method":"ticket","account":config.account,"character":config.character,"ticket":datapipe.key,"cname":"Cogito","cversion":config.version})))
+			# reactor.callLater(1.5, sendRaw, "ORS")
+			
 	def FLN(self, item):
 		char = getUser(item.args['character'])
 		for chan in datapipe.channelDict.values():
 			if char.name in chan.users:
-				chan.leave(char)
+				chan.userLeft(char)
 		
 	def FRL(self, item): pass
 	
-	def HLO(self, item): utils.log("Connection established...")
+	def HLO(self, item): 
+		utils.log("Connection established...")
+		sendRaw("ORS")
 			
 	def ICH(self, item):
 		chan = getChannel(item.args['channel'])
@@ -470,7 +473,7 @@ class FListCommands(threading.Thread):
 		print("User {} has joined '{}'.".format(char.name, chan.name))
 		if char.name == config.character: return
 		if char.name in chan.blacklist: char.kick(char)
-		if chan.checkAge == False: return
+		if chan.minage == 0: return
 		d = threads.deferToThread(FListAPI.getAge, char.name)
 		d.addCallback(checkAge, char=char, chan=chan)
 						
@@ -633,12 +636,11 @@ class FListCommands(threading.Thread):
 	def minage(self, item):
 		try:
 			age = int(item.args[0])
-			if age == 0:
-				item.source.channel.checkAge = False
-				sendText("Cogito Age Check deactivated by {}.".format(item.source.character.name), item.access_type, chan=item.source.channel)
-				return
 			item.source.channel.minage = age
-			sendText("Cogito Age Check activated by {}. Alerting administrators to characters below age {}".format(item.source.character.name, age), item.access_type, chan=item.source.channel)
+			if age == 0:
+				reply("Cogito Age Check deactivated by {}.".format(item.source.character.name), item)
+				return
+			reply("Cogito Age Check activated by {}. Alerting administrators to characters below age {}".format(item.source.character.name, age), item)
 		except ValueError:
 			reply("Error: Cannot parse {} as a number.".format(item.args[0]), item, 0)
 	
@@ -748,9 +750,9 @@ class FListProtocol(WebSocketClientProtocol, FListCommands):
 		
 	def onOpen(self):
 		datapipe.key = FListAPI.getKey()
-		sendRaw("IDN {}".format(json.dumps({"method":"ticket","account":config.account,"character":"Cogito","ticket":datapipe.key,"cname":"cogito","cversion":config.version})))
-		#sendRaw("LCH {}".format(json.dumps({'channel':'Frontpage'})))
-		sendRaw("ORS")
+		reactor.callLater(0.75, sendRaw, "IDN {}".format(json.dumps({"method":"ticket","account":config.account,"character":"Cogito","ticket":datapipe.key,"cname":"cogito","cversion":config.version})))
+		# sendRaw("IDN {}".format(json.dumps({"method":"ticket","account":config.account,"character":"Cogito","ticket":datapipe.key,"cname":"cogito","cversion":config.version})))
+		# sendRaw("ORS")
 
 	def onMessage(self, msg, binary):
 		msg = msg.decode('ascii', 'ignore')
