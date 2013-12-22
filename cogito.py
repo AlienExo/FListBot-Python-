@@ -1,6 +1,8 @@
+from __future__ import unicode_literals
+#4:30 Skype date with R.
+
 #when leaving channel, replace datapipe.channels value with Null to prevent 1 becomine 2, 2 becoming 3.
 #add a datapipe.ignorelist you can actually add/remove from
-
 
 import config
 import datetime
@@ -363,7 +365,6 @@ def checkAge(age, char, chan):
 					if y.status in ['busy', 'dnd']: 
 						continue
 					else:
-						print("Mod {} selected for this check.".format(y.name))
 						break
 				except: traceback.print_exc()
 						
@@ -665,7 +666,7 @@ class FListCommands(threading.Thread):
 			reactor.stop()
 			chans = {}
 			for name, chaninst in datapipe.channelDict.items():
-				if (hasattr(chaninst, 'minage') and chaninst.minage!=18) or (len(chaninst.whitelist) > 0): 
+				if (hasattr(chaninst, 'minage') and chaninst.minage!=0) or (len(chaninst.whitelist) > 0): 
 					chaninst.users = []
 					chaninst.lastjoined = []
 					chaninst.index = []
@@ -755,7 +756,7 @@ class FListProtocol(WebSocketClientProtocol, FListCommands):
 		# sendRaw("ORS")
 
 	def onMessage(self, msg, binary):
-		msg = msg.decode('ascii', 'ignore')
+		# msg = msg.decode('ascii', 'ignore')
 		message = Message(msg)
 		recvQueue.put((message, self))
 		

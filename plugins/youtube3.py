@@ -46,7 +46,8 @@ def loop(self, msg):
 		except KeyError:
 			rating = 0
 			nrating = 0
-		vid = "[YouTube] [color=green] {!s} :: {!s} :: {!s} :: {!s} Views :: {!s} Ratings[/color]".format(title, flength, "*"*rating, views, nrating).encode('ascii', 'replace')
+		# vid = u"[YouTube] [color=green] {!s} :: {!s} :: {!s} :: {!s} Views :: {!s} Ratings[/color]".format(title, flength, u"\u2605"*rating, views, nrating).encode('utf-8', 'replace')
+		vid = u"[YouTube] [color=green] {!s} :: {!s} :: {!s} :: {!s} Views :: {!s} Ratings[/color]".format(title, flength, u"\u2605"*rating, views, nrating)
 		self.reply(vid, msg, 2)
 				
 def test(url):
