@@ -827,7 +827,7 @@ def parseText(self, msg):
 					_songreset()
 
 	for x in songs.dict_firstlines: 
-		if songs.matcher(lambda x: x==" ", msg.params, x).ratio() > config.min_ratio:
+		if songs.matcher(lambda x: x==" ", msg.params, x).ratio() > 0.75:
 			try:
 				datapipe.song = songs.dict_firstlines[x]
 				datapipe.songiter = iter(songs.dict_songs[datapipe.song])
