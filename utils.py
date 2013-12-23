@@ -8,7 +8,7 @@ import traceback
 import yaml
 
 def log(text, ltype=1):
-	"""Merely dresses up text with a timestamp and prints it (ltype 0), writes to '<BOT>.log' (ltype 1), or '<BOT> errors.log' (ltype 2), or '<BOT> verbose.log'(type 3)"""
+	"""Merely dresses up text with a timestamp and prints it (ltype 0), writes to '<BOT> events.log' (ltype 1), or '<BOT> errors.log' (ltype 2), or '<BOT> conversation.log'(type 3)"""
 	files=['', ' events', ' errors', ' conversation']
 	text="{!s} -- {}".format(time.strftime("%c"), text)
 	print(text)

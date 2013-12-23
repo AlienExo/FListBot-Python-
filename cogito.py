@@ -535,7 +535,7 @@ class FListCommands(threading.Thread):
 		# datapipe.whitelist.append(candidate)
 		item.source.channel.whitelist.append(candidate)
 		reply("{} has been whitelisted for {}.".format(candidate, item.source.channel.name), item)	
-		utils.log("{} has been whitelisted for {} by {}.".format(candidate, item.source.channel.name, item.source.character.name))	
+		utils.log("{} has been whitelisted for {} by {}.".format(candidate, item.source.channel.name, item.source.character.name), 1)	
 		#utils.saveData(datapipe.whitelist, 'whitelist')
 
 	def blacklist(self, item):
@@ -543,23 +543,21 @@ class FListCommands(threading.Thread):
 		# datapipe.blacklist.append(candidate)
 		item.source.channel.blacklist.append(candidate)
 		reply("{} has been blacklisted for {}.".format(candidate, item.source.channel.name), item)
-		utils.log("{} has been blacklisted for {} by {}.".format(candidate, item.source.channel.name, item.source.character.name))
+		utils.log("{} has been blacklisted for {} by {}.".format(candidate, item.source.channel.name, item.source.character.name), 1)
 		
 	def op(self, item):
 		candidate = item.params
 		chan = item.source.channel
 		chan.ops.append(candidate)
-		datapipe.admins.append(candidate)
 		reply("{} has been made a bot operator for {}.".format(candidate, item.source.channel.name), item)
-		utils.log("{} has been a bot operator for {} by {}.".format(candidate, chan.name, item.source.character.name))
+		utils.log("{} has been a bot operator for {} by {}.".format(candidate, chan.name, item.source.character.name), 1)
 		
 	def deop(self, item):
 		candidate = item.params
 		chan = item.source.channel
 		chan.ops.remove(candidate)
-		datapipe.admins.remove(candidate)
 		reply("{} is no longer a bot operator for {}.".format(candidate, item.source.channel.name), item)
-		utils.log("{} has is no longer a bot operator for {} by order of {}.".format(candidate, item.source.channel.name, item.source.character.name))
+		utils.log("{} has is no longer a bot operator for {} by order of {}.".format(candidate, item.source.channel.name, item.source.character.name), 1)
 		
 	def join(self, item):
 		chan = getChannel(item.params)
@@ -575,14 +573,14 @@ class FListCommands(threading.Thread):
 		char = item.params
 		sendRaw("CKU {}".format(json.dumps({'channel': item.source.channel.key, 'character': char})))
 		reply("Command received. Removing '{}' from {}.".format(character, source.channel), item, 0)
-		utils.log("{} has kicked {} from {}.".format(item.source.character.name, char, item.source.channel.name))
+		utils.log("{} has kicked {} from {}.".format(item.source.character.name, char, item.source.channel.name), 1)
 	
 	def ban(self, item):
 		char = item.params	
 		sendRaw("CKU {}".format(json.dumps({'channel': item.source.channel.key, 'character': char})))
 		reply("Command received. Banning '{}' from {}.".format(character, source.channel), item, 0)
 		item.source.channel.blacklist.append(char)
-		utils.log("{} has banned {} from {}.".format(item.source.character.name, char, item.source.channel.name))
+		utils.log("{} has banned {} from {}.".format(item.source.character.name, char, item.source.channel.name), 1)
 	
 #	def kickban(self, character, channel=source.channel):
 #		kchannel = channelKey(channel)
@@ -648,10 +646,12 @@ class FListCommands(threading.Thread):
 			reply("Gonna need at least seven letters for a rainbow!", item)
 			return
 		d,e = divmod(a, 6)
+		if e == 0: d,e = divmod(a, 7)
 		for x in xrange(0, a, d):
 			slist.append(item.params[x:x+d])
 		if e>0:
 			slist.append(item.params[-e:])
+		else: slist.append('')
 		print len(slist), slist
 		sendText("[color=red]{}[/color][color=orange]{}[/color][color=yellow]{}[/color][color=green]{}[/color][color=cyan]{}[/color][color=blue]{}[/color][color=purple]{}[/color]".format(*slist), 2, chan=item.source.channel)
 		
@@ -680,7 +680,7 @@ class FListCommands(threading.Thread):
 				except:
 					traceback.print_exc()
 		except Exception, error:
-			utils.log("Error during shutdown: {}".format(error))
+			utils.log("Error during shutdown: {}".format(error), 1)
 			traceback.print_exc()
 		else:
 			print('Shutdown successful. Goodbye, administrator.')
