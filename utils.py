@@ -7,18 +7,18 @@ import time
 import traceback
 import yaml
 
-def log(text, ltype=3):
+def log(text, ltype=1):
 	"""Merely dresses up text with a timestamp and prints it (ltype 0), writes to '<BOT>.log' (ltype 1), or '<BOT> errors.log' (ltype 2), or '<BOT> verbose.log'(type 3)"""
-	files=['', '', ' errors', ' verbose']
+	files=['', ' events', ' errors', ' conversation']
 	text="{!s} -- {}".format(time.strftime("%c"), text)
 	print(text)
 	try:
 		with open('./logs/{}{}.log'.format(config.character, files[ltype]), 'a') as io:
-			io.write(text)
+			io.write(text+"\n")
 
 	except IOError:
 		a = open('./logs/{}{}.log'.format(config.character, files[ltype]), 'w')
-		a.write(text)
+		a.write(text+"\n")
 		a.close()	
 
 def loadData(file, expected=dict, path='./data/'):

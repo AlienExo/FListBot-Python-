@@ -197,7 +197,7 @@ class DataPipe():
 		reply(message, item, path_override)
 		
 	def writeLog(self, text):
-		utils.log(text, 1)
+		utils.log.log(text, 1)
 		
 datapipe = DataPipe()
 
@@ -366,7 +366,7 @@ def checkAge(age, char, chan):
 				except: traceback.print_exc()
 		if char.age<chan.minage and char.age!=0:
 			sendText("User [color=red]below {}'s minimum age of {}:[/color] [user]{}[/user].".format(chan.name, chan.minage, char.name), 0, char=y)
-			utils.log("User {} under minimum age of {} for {}. Alerting {}.".format(char.name, chan.minage, chan.name, y.name))
+			utils.log("User {} under minimum age of {} for {}. Alerting {}.".format(char.name, chan.minage, chan.name, y.name), 1)
 			banter = eval(random.choice(banBanter))
 			sendText(banter, 2, char, chan)
 		#	print("\tExpulsion.")
@@ -419,7 +419,7 @@ class FListCommands(threading.Thread):
 	def CON(self, item):
 		with open('./data/user stats.txt', 'a') as io:
 			io.write("{} {}\n".format(time.strftime("%c"), item.args['count']))
-		utils.log("{} users online.".format(int(item.args['count'])))
+		utils.log("{} users online.".format(int(item.args['count'])), 1)
 			
 	def COA(self, item):
 		chan = getChannel(item.args['channel'])
@@ -758,8 +758,8 @@ class FListProtocol(WebSocketClientProtocol, FListCommands):
 		
 """sendRaw and sendText both expect Message() instances, which have self.params (a dict for sendRaw, a string for sendText, similar to received messages), self.source (carried over from the incoming message object?) and that's about it?"""	
 def parseText(self, msg):
-	if not msg.params[:3]=="/me":print ( "{} -- ({}) {}: \"{}\"".format(time.strftime("%c"), msg.source.channel.name, msg.source.character.name, msg.params))
-	else: print ( "{} -- ({}) {}{}".format(time.strftime("%c"), msg.source.channel.name, msg.source.character.name, msg.params[3:]))
+	if not msg.params[:3]=="/me":utils.log( "({}) {}: \"{}\"".format(msg.source.channel.name, msg.source.character.name, msg.params), 3)
+	else: utils.log("({}) {}{}".format(msg.source.channel.name, msg.source.character.name, msg.params[3:]), 3)
 	try:
 		if msg.args[0] in datapipe.functions.keys():
 			#print ("\tCommand '{}' recognized.".format(msg.args[0]))
