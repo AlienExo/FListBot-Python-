@@ -47,7 +47,7 @@ def loop(self, msg):
 			rating = 0
 			nrating = 0
 		# vid = u"[YouTube] [color=green] {!s} :: {!s} :: {!s} :: {!s} Views :: {!s} Ratings[/color]".format(title, flength, u"\u2605"*rating, views, nrating).encode('utf-8', 'replace')
-		vid = u"[YouTube] [color=green] {!s} :: {!s} :: {!s} :: {!s} Views :: {!s} Ratings[/color]".format(title, flength, u"\u2605"*rating, views, nrating)
+		vid = u"[You[color=white]Tube[/color]] [color=green] {!s} :: {!s} :: {!s} :: {:,} Views :: {:,} Ratings[/color]".format(title, flength, u"\u2605"*rating, views, nrating)
 		self.reply(vid, msg, 2)
 				
 def test(url):

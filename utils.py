@@ -7,35 +7,19 @@ import time
 import traceback
 import yaml
 
-def log(text, ltype=2):
-	"""Writes to '<BOT>.log' (type 0), '<BOT> EX.log' (type 1), or both (type 2)"""
+def log(text, ltype=3):
+	"""Merely dresses up text with a timestamp and prints it (ltype 0), writes to '<BOT>.log' (ltype 1), or '<BOT> errors.log' (ltype 2), or '<BOT> verbose.log'(type 3)"""
+	files=['', '', ' errors', ' verbose']
 	text="{!s} -- {}".format(time.strftime("%c"), text)
 	print(text)
 	try:
-		if ltype == 0:
-			with open('./logs/{}.log'.format(config.character), 'a') as io:
-				io.write(text)
-			
-		elif ltype == 1:
-			with open('./logs/{} errors.log'.format(config.character), 'a') as io:
-				io.write(text)
-		
-		elif ltype == 2:
-			with open('./logs/{} verbose.log'.format(config.character), 'a') as io:
-					io.write(text)
+		with open('./logs/{}{}.log'.format(config.character, files[ltype]), 'a') as io:
+			io.write(text)
 
 	except IOError:
-		if ltype == 0:
-			a = open('./logs/{}.log'.format(config.character), 'w')
-			a.close()
-			
-		elif ltype == 1:
-			a = open('./logs/{} errors.log'.format(config.character), 'w')
-			a.close() 
-			
-		elif ltype == 2:
-			a = open('./logs/{} verbose.log'.format(config.character), 'w')
-			a.close()		
+		a = open('./logs/{}{}.log'.format(config.character, files[ltype]), 'w')
+		a.write(text)
+		a.close()	
 
 def loadData(file, expected=dict, path='./data/'):
 	try:

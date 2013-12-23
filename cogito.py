@@ -1,8 +1,5 @@
 from __future__ import unicode_literals
-#4:30 Skype date with R.
-
 #when leaving channel, replace datapipe.channels value with Null to prevent 1 becomine 2, 2 becoming 3.
-#add a datapipe.ignorelist you can actually add/remove from
 
 import config
 import datetime
@@ -105,10 +102,10 @@ def userFromFListData(name, data):
 class User():
 	def __init__(self, name):
 		self.name = name
-		self.lastseen = datetime.datetime.now()
 		self.status = "online"
 		self.channels=[]
 		self.kinks=()
+		datapipe.lastseenDict[self.name]=datetime.datetime.now()
 
 	def __getattribute__(self, item):
 		try:
@@ -367,8 +364,6 @@ def checkAge(age, char, chan):
 					else:
 						break
 				except: traceback.print_exc()
-						
-						
 		if char.age<chan.minage and char.age!=0:
 			sendText("User [color=red]below {}'s minimum age of {}:[/color] [user]{}[/user].".format(chan.name, chan.minage, char.name), 0, char=y)
 			utils.log("User {} under minimum age of {} for {}. Alerting {}.".format(char.name, chan.minage, chan.name, y.name))
@@ -464,6 +459,7 @@ class FListCommands(threading.Thread):
 		for x in chars:
 			x=getUser(x)
 			if not x.name in chan.users: chan.users.append(x.name)
+			datapipe.lastseenDict[x.name]=datetime.datetime.now()
 
 	def IDN(self, item): pass
 	def IGN(self, item): pass
@@ -471,7 +467,7 @@ class FListCommands(threading.Thread):
 	def JCH(self, item):
 		char = getUser(item.args['character']['identity'])
 		chan = getChannel(item.args['channel'])
-		print("User {} has joined '{}'.".format(char.name, chan.name))
+		utils.log("User {} has joined '{}'.".format(char.name, chan.name))
 		if char.name == config.character: return
 		if char.name in chan.blacklist: char.kick(char)
 		if chan.minage == 0: return
@@ -500,7 +496,7 @@ class FListCommands(threading.Thread):
 				getChannel(x).join()
 				#print ("Added callback to join {}".format(x))
 		except Exception:
-			traceback.print_exc()
+			utils.log(traceback.format_exc(), 2)
 		
 		#this is important and needs to lock 'till it's done
 			#need a unique function to handle it?
