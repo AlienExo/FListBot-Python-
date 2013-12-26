@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 #when leaving channel, replace datapipe.channels value with Null to prevent 1 becomine 2, 2 becoming 3.
 
 import config
+from copy import deepcopy
 import datetime
 import FListAPI
 import importlib
@@ -56,7 +57,7 @@ class Channel():
 		name = getUser(character).name
 		chan.users.append(name)
 		chan.lastjoined.append(name)
-		utils.log("Appended {} to {}'s last joined list. Current length: {}\n".format(name, chan.name, len(chan.lastjoined)), 0)
+		# utils.log("Appended {} to {}'s last joined list. Current length: {}\n".format(name, chan.name, len(chan.lastjoined)), 0)
 				
 	def userLeft(chan, character):
 		name = getUser(character).name
@@ -166,12 +167,15 @@ def saveChannelSettings():
 	chans = {}
 	for name, chaninst in datapipe.channelDict.items():
 		if (hasattr(chaninst, 'minage') and chaninst.minage!=0) or (len(chaninst.whitelist) > 0): 
-			chaninst.users = []
-			chaninst.lastjoined = []
-			chaninst.index = []
-			chaninst.key = ""
-			chans[name]=chaninst
+			newinst = deepcopy(chaninst)
+			newinst.users = []
+			newinst.lastjoined = []
+			newinst.index = []
+			newinst.key = ""
+			chans[name]=newinst
 	utils.saveData(chans, 'channels')
+	for x in chans: del x
+	del chans
 
 class DataPipe():
 	def __init__(self):
@@ -375,10 +379,8 @@ def checkAge(age, char, chan):
 					else:
 						break
 			assert y
-		except AssertionError:
-			for user in xadmins:
-				print user.name, "\t", user.status
-			y = random.choice(xadmins)
+		except UnboundLocalError:
+			utils.log("Cannot fetch a mod, none logged in or set to online. Cannot verify user {}.".format(char.name), 2)
 		except: traceback.print_exc()
 		if char.age<chan.minage and char.age!=0:
 			sendText("User [color=red]below {}'s minimum age of {}:[/color] [user]{}[/user].".format(chan.name, chan.minage, char.name), 0, char=y)

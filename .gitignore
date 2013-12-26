@@ -12,10 +12,6 @@ Desktop.ini
 # Recycle Bin used on file shares
 $RECYCLE.BIN/
 
-# Mac crap
-.DS_Store
-
-
 #############
 ## Python
 #############
@@ -35,36 +31,23 @@ develop-eggs/
 # Installer logs
 pip-log.txt
 
-#
 # cogito
-#
-
 *.pyc
+data/
 documentation/
-2test.py
-banter.txt
-data/Cogito messages.yml
-data/Cogito stats.yml
-data/whitelist.yml
-elements.txt
-loader4proto.py
-logs/Cogito errors.log
-logs/Cogito verbose.log
-new  2.txt
-new  3.txt
-personalities/bartender/LINES test.txt
-personalities/bartender/elements.txt
-personalities/bartender/new  2
-personalities/bartender/new  2.txt
-plugins/TEMPLATE.py
 plugins/modified calc frac time.txt
 plugins/new  2.txt
 plugins/quickTEMPLATE.py
+plugins/TEMPLATE.py
+logs/
+2test.py
+loader4proto.py
+selflessloader.py
+zalgo.py
+banter.txt
+elements.txt
+new  2.txt
+new  3.txt
 rest.txt
 rgb.txt
-selflessloader.py
 speech0.mp3
-zalgo.py
-data/user stats.txt
-data/channels.yml
-logs/
