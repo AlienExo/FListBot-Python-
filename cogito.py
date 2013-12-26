@@ -56,7 +56,7 @@ class Channel():
 		name = getUser(character).name
 		chan.users.append(name)
 		chan.lastjoined.append(name)
-		print("Appended {} to {}'s last joined list. Current length: {}\n".format(name, chan.name, len(chan.lastjoined)))
+		utils.log("Appended {} to {}'s last joined list. Current length: {}\n".format(name, chan.name, len(chan.lastjoined)), 0)
 				
 	def userLeft(chan, character):
 		name = getUser(character).name
@@ -161,6 +161,17 @@ def reply(message, item, path_override=None):
 	if path_override is not None: path = path_override
 	else: path = item.access_type
 	sendText(message, path, item.source.character.name, item.source.channel.name)
+	
+def saveChannelSettings():
+	chans = {}
+	for name, chaninst in datapipe.channelDict.items():
+		if (hasattr(chaninst, 'minage') and chaninst.minage!=0) or (len(chaninst.whitelist) > 0): 
+			chaninst.users = []
+			chaninst.lastjoined = []
+			chaninst.index = []
+			chaninst.key = ""
+			chans[name]=chaninst
+	utils.saveData(chans, 'channels')
 
 class DataPipe():
 	def __init__(self):
@@ -221,7 +232,7 @@ def getChannel(channel):
 		print "{} is actually a User instance; this is what's been messing up your channelDict.".format(channel)
 		return None
 	for x in datapipe.channelDict.values():
-		if (x.name == channel) or (x.key == channel): 
+		if (x.key == channel) or (x.name == channel): 
 			return x
 	chan = Channel(channel)
 	datapipe.channelDict[channel]=chan
@@ -341,29 +352,34 @@ def checkAge(age, char, chan):
 		chan=getChannel(chan)
 		char.age = age
 		if char.age>=chan.minage:
-			print("User {} has passed inspection for {} (Age>{}), claiming to be {} years old.".format(char.name, chan.name, chan.minage, char.age))
+			utils.log("User {} has passed inspection for {} (Age>{}), claiming to be {} years old.".format(char.name, chan.name, chan.minage, char.age), 0)
 			#sendText("Demonstration: User {} has passed inspection (Age>{}), being {} years old. Apparently.".format(char.name, config.minage, char.age), 0, 'Valorin Petrov')
 			chan.userJoined(char.name)
 			telling(char, chan)
 			return
 			
 		if (char.name in chan.whitelist) or (char.name in datapipe.whitelist): 
-			print ("Whitelisted user.")
+			print ("\t\tWhitelisted user.")
 			chan.userJoined(char.name)
 			telling(char, chan)
 			return
 			
 		xadmins = sorted(chan.ops, key=lambda *args: random.random())
-		for x in xadmins:
-			if x in chan.users:
-				if x in chan.ignoreops: continue
-				y = getUser(x)
-				try:
+		try:
+			for x in xadmins:
+				if x in chan.users:
+					if x in chan.ignoreops: continue
+					y = getUser(x)
 					if y.status in ['busy', 'dnd']: 
 						continue
 					else:
 						break
-				except: traceback.print_exc()
+			assert y
+		except AssertionError:
+			for user in xadmins:
+				print user.name, "\t", user.status
+			y = random.choice(xadmins)
+		except: traceback.print_exc()
 		if char.age<chan.minage and char.age!=0:
 			sendText("User [color=red]below {}'s minimum age of {}:[/color] [user]{}[/user].".format(chan.name, chan.minage, char.name), 0, char=y)
 			utils.log("User {} under minimum age of {} for {}. Alerting {}.".format(char.name, chan.minage, chan.name, y.name), 1)
@@ -528,6 +544,7 @@ class FListCommands(threading.Thread):
 		for num, chan in enumerate(datapipe.channels):
 			if num==0: continue
 			if chan == None: continue
+			print num, chan.index, chan.name
 			reply("#{}: {}".format(num, chan.name), item, 0)
 			
 	def whitelist(self, item):
@@ -535,7 +552,8 @@ class FListCommands(threading.Thread):
 		# datapipe.whitelist.append(candidate)
 		item.source.channel.whitelist.append(candidate)
 		reply("{} has been whitelisted for {}.".format(candidate, item.source.channel.name), item)	
-		utils.log("{} has been whitelisted for {} by {}.".format(candidate, item.source.channel.name, item.source.character.name), 1)	
+		utils.log("{} has been whitelisted for {} by {}.".format(candidate, item.source.channel.name, item.source.character.name), 1)
+		saveChannelSettings()
 		#utils.saveData(datapipe.whitelist, 'whitelist')
 
 	def blacklist(self, item):
@@ -544,6 +562,7 @@ class FListCommands(threading.Thread):
 		item.source.channel.blacklist.append(candidate)
 		reply("{} has been blacklisted for {}.".format(candidate, item.source.channel.name), item)
 		utils.log("{} has been blacklisted for {} by {}.".format(candidate, item.source.channel.name, item.source.character.name), 1)
+		saveChannelSettings()
 		
 	def op(self, item):
 		candidate = item.params
@@ -638,6 +657,8 @@ class FListCommands(threading.Thread):
 			reply("Cogito Age Check activated by {}. Alerting administrators to characters below age {}".format(item.source.character.name, age), item)
 		except ValueError:
 			reply("Error: Cannot parse {} as a number.".format(item.args[0]), item, 0)
+		else:
+			saveChannelSettings()
 	
 	def rainbowText(self, item):
 		slist=[]
@@ -661,14 +682,7 @@ class FListCommands(threading.Thread):
 			print('Shutting down. Stopping reactor and writing data.')
 			reactor.stop()
 			chans = {}
-			for name, chaninst in datapipe.channelDict.items():
-				if (hasattr(chaninst, 'minage') and chaninst.minage!=0) or (len(chaninst.whitelist) > 0): 
-					chaninst.users = []
-					chaninst.lastjoined = []
-					chaninst.index = []
-					chaninst.key = ""
-					chans[name]=chaninst
-			utils.saveData(chans, 'channels')
+			saveChannelSettings()
 			utils.saveData(utils.statsDict, '{} stats'.format(config.character))
 			utils.saveData(admins, 'admins')
 			utils.saveData(datapipe.whitelist, 'whitelist')
@@ -687,8 +701,7 @@ class FListCommands(threading.Thread):
 		finally:
 			sys.exit(0)
 		
-	def help(self, msg):
-		
+	def help(self, msg):		
 		try:
 			print msg.args[0]
 			if msg.args[0]:
@@ -733,8 +746,7 @@ class FListCommands(threading.Thread):
 			datapipe.messageDict[recipient.lower()]=messages
 			utils.saveData(datapipe.messageDict, '{} messages'.format(config.character))
 			reply("[color=green]Message to {} saved.[/color]".format(recipient), msg, 2)
-			
-			
+						
 	def say(self, msg):
 		sendText(msg.params, 2, chan=msg.source.channel)
 		
@@ -769,7 +781,6 @@ def parseText(self, msg):
 			#!!! CHANGE TO PARSING SYSTEM FOR CHANNELINDEPENDENT WHATEVERTHEFUCK
 			if msg.source.channel.name == "private": 
 				msg.access_type = 0
-				print ("Parsing for channel index...")
 				index = None
 				try:
 					index = int(msg.args[-1])
@@ -781,7 +792,7 @@ def parseText(self, msg):
 				if index is not None:
 					try:	
 						chan = datapipe.channels[index]
-						print("Index found. Rerouting PM command '{}' from channel 'private' into '{}'.".format(func, chan.name))
+						print("\tIndex found. Rerouting PM command '{}' from channel 'private' into '{}'.".format(func, chan.name))
 						msg.source.channel = chan
 					except IndexError:
 						reply("Command not executed: There is no channel with index {}. There are {} channels registered. To see the list, message me with '.lc'.".format(index, len(datapipe.channels)))	
@@ -795,14 +806,14 @@ def parseText(self, msg):
 			# 0 - priv, 1 - chan, 2 - chan, nick 
 			func_params = datapipe.functions[func]
 			if msg.access_type in func_params[2]:
-				print("\t\tCorrect access type")
+				print("\tCorrect access type")
 				msg.cf_level = 2
 				if msg.source.character.name in datapipe.admins: msg.cf_level=0
 				elif (msg.source.character.name in msg.source.channel.ops): msg.cf_level = 1
 				#if (msg.source.channel.name == 'private') and (msg.source.character.name in allAdmins): msg.cf_level = 1
 				#print msg.source.character.name, msg.source.channel.ops, datapipe.admins, msg.cf_level, msg.source.character.name in msg.source.channel.ops, msg.source.character.name in datapipe.admins
 				if msg.cf_level <= func_params[1]:
-					print ("\t\t\tHandling '{}'...".format(func_params[0]))
+					print ("\tHandling '{}'...".format(func_params[0]))
 					handle_all_the_things(self, msg, func_params[0])
 				else:
 					reply("You do not have the necessary permissions to execute function '{}' in channel '{}'.".format(func_params[0], msg.source.channel.name), msg)

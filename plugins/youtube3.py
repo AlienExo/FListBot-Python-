@@ -1,4 +1,5 @@
 #1dbdc6da34094db4e661ed43aac83d91
+from __future__ import unicode_literals
 import traceback
 import urllib2
 import re
@@ -36,7 +37,7 @@ def loop(self, msg):
 		response.close()
 		data 	= resp['entry']
 		title 	= data['title']['$t']
-		title 	= title.encode('utf-8', 'replace')
+		# title 	= title.encode('utf-8', 'replace')
 		views 	= int(data['yt$statistics']['viewCount'])
 		length 	= data['media$group']['media$content'][0]['duration']
 		flength = lencalc(length)
