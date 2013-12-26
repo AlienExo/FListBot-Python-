@@ -420,6 +420,7 @@ class FListCommands(threading.Thread):
 	def CDS(self, item):pass
 	
 	def CKU(self, item):
+		utils.log("{} was banned from {} by {}".format(item.args['character'], getChannel(item.args['channel']).name, item.args['operator']))
 		# banned = getUser(item.args[''])
 		if config.banter and random.random<=config.banterchance:
 			a = eval(random.choice(banBanter))
