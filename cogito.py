@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 #when leaving channel, replace datapipe.channels value with Null to prevent 1 becomine 2, 2 becoming 3.
-
+#rewrite logging system to be per-channel, perhaps look into creating subfolders.
 import config
 from copy import deepcopy
 import datetime
@@ -25,7 +25,7 @@ import yaml
 from twisted.internet import defer, reactor, task, threads
 from autobahn.websocket import WebSocketClientFactory, WebSocketClientProtocol, connectWS
 
-ignore_commands = ['FLN', 'STA', 'NLN', 'PIN', 'MSG', 'PRI', 'TPN', 'LIS', 'ORS', 'IDN', 'VAR', 'CDS', 'COL', 'ICH', 'JCH', 'LCH', 'CON', 'HLO', 'ERR']
+ignore_commands = ['FLN', 'STA', 'NLN', 'PIN', 'MSG', 'PRI', 'TPN', 'LIS', 'ORS', 'IDN', 'VAR', 'CDS', 'COL', 'ICH', 'JCH', 'LCH', 'CON', 'HLO', 'ERR', 'CKU']
 opener 			= urllib2.build_opener()
 opener.addheaders.append(('Cookie', 'warning=1'))
 startuptime 	= datetime.datetime.now()
@@ -75,7 +75,8 @@ class Channel():
 				print pos, item, datapipe.channels
 				datapipe.channels[pos]=self
 				print pos, item, datapipe.channels
-				self.index = len(datapipe.channels)-1	
+				# self.index = len(datapipe.channels)-1	
+				self.index = pos	
 				return
 		datapipe.channels.append(self)
 		self.index = len(datapipe.channels)-1
@@ -83,10 +84,11 @@ class Channel():
 		
 	def part(self):
 		sendRaw("LCH {}".format(json.dumps({'channel':self.key})))
-		datapipe.channels[datapipe.channels.index(self)]=None
+		datapipe.channels[self.index]=None
+		self.index=None
 		
 def userFromFListData(name, data):
-	print("\tUser data acquired.")
+	print("User data acquired.")
 	user = getUser(name)
 	try:
 		for x in data:
@@ -212,7 +214,7 @@ class DataPipe():
 		reply(message, item, path_override)
 		
 	def writeLog(self, text):
-		utils.log.log(text, 1)
+		utils.log(text, 1)
 		
 datapipe = DataPipe()
 
@@ -362,8 +364,8 @@ def checkAge(age, char, chan):
 			telling(char, chan)
 			return
 			
-		if (char.name in chan.whitelist) or (char.name in datapipe.whitelist): 
-			print ("\t\tWhitelisted user.")
+		if char.name in chan.whitelist: 
+			print ("{} is a whitelisted user for {}".format(char.name, chan.name))
 			chan.userJoined(char.name)
 			telling(char, chan)
 			return
@@ -380,7 +382,7 @@ def checkAge(age, char, chan):
 						break
 			assert y
 		except UnboundLocalError:
-			utils.log("Cannot fetch a mod, none logged in or set to online. Cannot verify user {}.".format(char.name), 2)
+			utils.log("Cannot fetch a mod, none logged in or set to online. Cannot verify user {} for {}.".format(char.name, chan.name), 2)
 		except: traceback.print_exc()
 		if char.age<chan.minage and char.age!=0:
 			sendText("User [color=red]below {}'s minimum age of {}:[/color] [user]{}[/user].".format(chan.name, chan.minage, char.name), 0, char=y)
@@ -391,8 +393,8 @@ def checkAge(age, char, chan):
 		#	char.kick(chan)
 		
 		elif char.age ==0:
-			print("\tCannot parse. Informing Mod {}\n".format(y.name))
-			sendText("Cannot automatically determine age of user '[user]{}[/user]'. Please verify manually: [user]{}[/user] [sub]To add user to the channel's whitelist, reply '.white {} {}' in a PM. If you tell me in the channel, leave the number out.[/sub]".format(char.name, char.name, char.name, chan.index), 0, char=y)
+			print("Cannot parse {}'s age. Informing Mod {}".format(char.name, y.name))
+			sendText("Can't verify user '[user]{}[/user]' for {}, minimum age set as {}. Please verify manually: [user]{}[/user] [sub]To add user to the channel's whitelist, reply '.white {} {}' in a PM. If you tell me in the channel, leave the number out.[/sub]".format(char.name, chan.name, chan.minage, char.name, char.name, chan.index), 0, char=y)
 			chan.userJoined(char.name)
 			return
 			
@@ -417,11 +419,13 @@ class FListCommands(threading.Thread):
 		#for op in ops:
 		#	datapipe.admins.append(op)
 		
+	def CBU(self, item):
+		utils.log("{} was banned from {} by {}".format(item.args['character'], getChannel(item.args['channel']).name, item.args['operator']))
+		
 	def CDS(self, item):pass
 	
 	def CKU(self, item):
-		utils.log("{} was banned from {} by {}".format(item.args['character'], getChannel(item.args['channel']).name, item.args['operator']))
-		# banned = getUser(item.args[''])
+		utils.log("{} was kicked from {} by {}".format(item.args['character'], getChannel(item.args['channel']).name, item.args['operator']))
 		if config.banter and random.random<=config.banterchance:
 			a = eval(random.choice(banBanter))
 			reply(a, item, 2)
@@ -450,7 +454,6 @@ class FListCommands(threading.Thread):
 	def COR(self, item):
 		chan = getChannel(item.args['channel'])
 		chan.ops.remove(item.args['character'])
-		allAdmins.remove(item.args['character'])
 		
 	def ERR(self, item):
 		utils.log("FList Error: Code {}. '{}'".format(item.args['number'], item.args['message']))
@@ -486,7 +489,7 @@ class FListCommands(threading.Thread):
 	def JCH(self, item):
 		char = getUser(item.args['character']['identity'])
 		chan = getChannel(item.args['channel'])
-		utils.log("User {} has joined '{}'.".format(char.name, chan.name))
+		utils.log("User {} has joined '{}'.".format(char.name, chan.name), 0)
 		if char.name == config.character: return
 		if char.name in chan.blacklist: char.kick(char)
 		if chan.minage == 0: return
@@ -498,7 +501,7 @@ class FListCommands(threading.Thread):
 		if chan.name == "Frontpage":
 			return
 		char = getUser(item.args['character'])
-		utils.log("User {} has left '{}'.".format(char.name, chan.name))
+		utils.log("User {} has left '{}'.".format(char.name, chan.name), 0)
 		chan.userLeft(char)
 		datapipe.lastseenDict[char.name]=datetime.datetime.now()
 					
@@ -547,7 +550,6 @@ class FListCommands(threading.Thread):
 		for num, chan in enumerate(datapipe.channels):
 			if num==0: continue
 			if chan == None: continue
-			print num, chan.index, chan.name
 			reply("#{}: {}".format(num, chan.name), item, 0)
 			
 	def whitelist(self, item):
@@ -587,7 +589,7 @@ class FListCommands(threading.Thread):
 		chan.join()
 	
 	def leave(self, item):
-		chan = getChannel(item.params)
+		chan = item.source.channel
 		reply("Command received. Leaving '{}'".format(chan.name), item, 0)
 		chan.part()
 	
@@ -798,7 +800,7 @@ def parseText(self, msg):
 						print("\tIndex found. Rerouting PM command '{}' from channel 'private' into '{}'.".format(func, chan.name))
 						msg.source.channel = chan
 					except IndexError:
-						reply("Command not executed: There is no channel with index {}. There are {} channels registered. To see the list, message me with '.lc'.".format(index, len(datapipe.channels)))	
+						reply("Command not executed: There is no channel with index {}. There are {} channels registered. To see the list, message me with '.lc'.".format(index, len(datapipe.channels)), msg)	
 						return
 						
 					except:	
@@ -877,6 +879,7 @@ def handle_all_the_things(self, msgobj, cmd=None):
 			if callable(func):
 				func(self, msgobj)
 			else:
+				print("{} -- Unregistered command '{}'; {}".format(time.strftime("%c"), item.cmd, item.args))
 				raise AttributeError
 				
 	except AttributeError, error:
@@ -974,8 +977,6 @@ def mainloop():
 		#Like, (Person who talked to you, function to call when you hear them again, condition to remove this part of the stack)
 		
 		item, self = recvQueue.get_nowait()
-		# datapipe.source = item.source
-		if item.cmd not in ignore_commands: print("{} -- {} {}".format(time.strftime("%c"), item.cmd, item.args))
 		if datapipe.personality != None: 
 			datapipe.personality.code.handle(self, item.cmd, item.params) 
 		if item.cmd not in ['MSG', 'PRI']:

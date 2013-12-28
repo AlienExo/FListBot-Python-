@@ -43,6 +43,9 @@ date = re.compile('(?P<day>\d{1,2})(\s)*(/|.|(st|nd|rd|th))?(\s)*(?P<month>(\d{1
 def horoscope(self, msgobj):
 	day, month = date.search(msgobj.params).group('day', 'month')
 	day = int(day)
+	if day>31:
+		self.reply("Please stop trying to intentionally cause a malfunction. Thank you.", msgobj, 0)
+		return
 	try:
 		month = int(month)
 	except ValueError:
