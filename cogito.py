@@ -116,8 +116,8 @@ class User():
 		except AttributeError:
 			print("\t Could not find {} in User instance for {}.".format(item, self.name))
 			#the blocking one never completes, the non-blocking returns a deferred that fucks up __getitem__ (and stop all the other stuff from working aparently)... :/
-			#data = threads.blockingCallFromThread(reactor, FListAPI.getCharInfo, name)
-			d = threads.deferToThread(FListAPI.getCharInfo(self.name))
+			#data = threads.blockingCallFromThread(reactor, FListAPI.getCharInfo, name, datapipe.key)
+			d = threads.deferToThread(FListAPI.getCharInfo(self.name, datapipe.key))
 			d.addCallback(userFromFListData)
 			# d.addCallback(object.__getattribute__(self, item))
 			d.addCallback(object.__getattribute__, self, item)
@@ -355,36 +355,30 @@ def ORSParse(data):
 	return
 
 def checkAge(age, char, chan):
+	chan=getChannel(chan)
+	char.age = age
+	if char.age>=chan.minage:
+		utils.log("User {} has passed inspection for {} (Age>{}), claiming to be {} years old.".format(char.name, chan.name, chan.minage, char.age), 0)
+		#sendText("Demonstration: User {} has passed inspection (Age>{}), being {} years old. Apparently.".format(char.name, config.minage, char.age), 0, 'Valorin Petrov')
+		chan.userJoined(char.name)
+		telling(char, chan)
+		return
+		
+	if char.name in chan.whitelist: 
+		print ("{} is a whitelisted user for {}".format(char.name, chan.name))
+		chan.userJoined(char.name)
+		telling(char, chan)
+		return
+		
+	xadmins = sorted(chan.ops, key=lambda *args: random.random())
+	for x in xadmins:
+		if x in chan.users:
+			if x in chan.ignoreops: continue
+			y = getUser(x)
+			if y.status in ['busy', 'dnd']: continue
+			else: break
 	try:
-		chan=getChannel(chan)
-		char.age = age
-		if char.age>=chan.minage:
-			utils.log("User {} has passed inspection for {} (Age>{}), claiming to be {} years old.".format(char.name, chan.name, chan.minage, char.age), 0)
-			#sendText("Demonstration: User {} has passed inspection (Age>{}), being {} years old. Apparently.".format(char.name, config.minage, char.age), 0, 'Valorin Petrov')
-			chan.userJoined(char.name)
-			telling(char, chan)
-			return
-			
-		if char.name in chan.whitelist: 
-			print ("{} is a whitelisted user for {}".format(char.name, chan.name))
-			chan.userJoined(char.name)
-			telling(char, chan)
-			return
-			
-		xadmins = sorted(chan.ops, key=lambda *args: random.random())
-		try:
-			for x in xadmins:
-				if x in chan.users:
-					if x in chan.ignoreops: continue
-					y = getUser(x)
-					if y.status in ['busy', 'dnd']: 
-						continue
-					else:
-						break
-			assert y
-		except UnboundLocalError:
-			utils.log("Cannot fetch a mod, none logged in or set to online. Cannot verify user {} for {}.".format(char.name, chan.name), 2)
-		except: traceback.print_exc()
+		assert y
 		if char.age<chan.minage and char.age!=0:
 			sendText("User [color=red]below {}'s minimum age of {}:[/color] [user]{}[/user].".format(chan.name, chan.minage, char.name), 0, char=y)
 			utils.log("User {} under minimum age of {} for {}. Alerting {}.".format(char.name, chan.minage, chan.name, y.name), 1)
@@ -393,14 +387,17 @@ def checkAge(age, char, chan):
 		#	print("\tExpulsion.")
 		#	char.kick(chan)
 		
-		elif char.age ==0:
+		elif char.age == 0:
 			print("Cannot parse {}'s age. Informing Mod {}".format(char.name, y.name))
 			sendText("Can't verify user '[user]{}[/user]' for {}, minimum age set as {}. Please verify manually: [user]{}[/user] [sub]To add user to the channel's whitelist, reply '.white {} {}' in a PM. If you tell me in the channel, leave the number out.[/sub]".format(char.name, chan.name, chan.minage, char.name, char.name, chan.index), 0, char=y)
 			chan.userJoined(char.name)
 			return
-			
-	except:
-		traceback.print_exc()
+		
+	except UnboundLocalError:
+		utils.log("Cannot fetch a mod, none logged in or set to online. Cannot verify user {} for {}.".format(char.name, chan.name), 2)
+		return
+
+	except: traceback.print_exc()
 
 class FListCommands(threading.Thread):
 
@@ -494,7 +491,7 @@ class FListCommands(threading.Thread):
 		if char.name == config.character: return
 		if char.name in chan.blacklist: char.kick(char)
 		if chan.minage == 0: return
-		d = threads.deferToThread(FListAPI.getAge, char.name)
+		d = threads.deferToThread(FListAPI.getAge, char.name, datapipe.key)
 		d.addCallback(checkAge, char=char, chan=chan)
 						
 	def LCH(self, item):

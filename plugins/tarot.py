@@ -25,8 +25,8 @@ deck= 	{	"[The Fool]":(			"The infinite lies within the simple, just as the simp
 			"[The World]":(			"Reach what you truly desire. Find balance within and without.", "The World represents an ending to a cycle of life, a pause in life before the next big cycle beginning with the fool. It tells us full happiness is also to give back to the world, sharing what we have learned or gained.", "Fulfillment - Accomplishment - Success - Integration")
 		}
 		
-spreads={	0:(1, "Single Card", ['your question as a whole']),
-			1:(10, "Celtic Cross", ['the significator', 'the conditions surrounding the question or an obstacle, an aspect of the question you have not yet considered', 'what you hope for in relation to the question being asked', 'what you have already experienced in relation to the whole spread', 'what was in the past', 'the influence that will come in the future', 'the attitude of the question being asked', 'how family or friends will influence the question', 'the hopes and fears in relation to the question', 'the end result of all of the previous nine cards']),
+spreads={	1:(1, "Single Card", ['your question as a whole']),
+			# 0:(10, "Celtic Cross", ['the significator', 'the conditions surrounding the question or an obstacle, an aspect of the question you have not yet considered', 'what you hope for in relation to the question being asked', 'what you have already experienced in relation to the whole spread', 'what was in the past', 'the influence that will come in the future', 'the attitude of the question being asked', 'how family or friends will influence the question', 'the hopes and fears in relation to the question', 'the end result of all of the previous nine cards']),
 			2:(5, "Star", ['what you see', 'what you can\'t see', 'what you can change', 'what you cannot change', 'what you can expect']),
 			3:(3, "Three-way", ['the past','the present','the future']),
 			4:(5, "Love", ['the past', 'the present', 'the future', 'the other person', 'obstacles or positives'])
@@ -58,7 +58,7 @@ def tarot(self, msgobj):
 			msg += " | "
 			c+=1
 		self.reply(msg, msgobj)
-		self.reply("For further information about any card, type '.t -e [Card Title]', e.g. '.t -e The Fool'.", msgobj, 0)
+		self.reply("For further information about any card, type '.t -e [Card Title]', e.g. .t -e The Fool", msgobj, 0)
 		
 	except IndexError:
 		self.reply("Arguments specified incorrectly. Usage: '.t {}-{} <spread>', or '.t -e <explanation> [Card Title]'; e.g. '.t 0' or '.t -e The Fool'.".format(range(len(spreads))[0], range(len(spreads))[-1]), msgobj)
