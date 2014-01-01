@@ -25,7 +25,7 @@ def getCharProfile(character):
 #stuff like age, species, etc is in here:
 def getCharInfo(character):
 	resp = opener.open("http://www.f-list.net/c/{}".format(quote(character)))
-	soup=BeautifulSoup(resp, convertEntities=BeautifulSoup.HTML_ENTITIES)
+	soup=BeautifulSoup(resp)
 	data = str(soup.find('div', {'class':'infodatabox'})).split("<br />")
 	res = {u'Age':0}
 	for x in data:

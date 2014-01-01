@@ -38,7 +38,7 @@ def loop(self, msgobj):
 			else:
 				if not url[-3:] in datatypes:
 					soup = BeautifulSoup(opener.open(url))						
-					self.reply("{}".format(soup.title.string.strip()), msgobj, 2)
+					self.reply(u"{}".format(soup.title.string.strip()), msgobj, 2)
 	except Exception as error:
 		traceback.print_exc()
 	
