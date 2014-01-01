@@ -108,7 +108,7 @@ class User():
 		self.status = "online"
 		self.channels=[]
 		self.kinks=()
-		datapipe.lastseenDict[self.name]=datetime.datetime.now()
+		# datapipe.lastseenDict[self.name]=datetime.datetime.now()
 
 	def __getattribute__(self, item):
 		try:
@@ -196,7 +196,8 @@ class DataPipe():
 		self.channelDict	= utils.loadData('channels', dict)
 		self.dict_limits 	= {}
 		self.usersDict 		= {}
-		self.lastseenDict 	= utils.loadData('lastseen', dict)
+		# self.lastseenDict 	= utils.loadData('lastseen', dict)
+		self.lastseenDict 	= {}
 		self.singer			= ""
 		self.song 			= ""
 		self.songlevel 		= 0
@@ -449,7 +450,6 @@ class FListCommands(threading.Thread):
 		char = getUser(item.args['channel'])
 		if not char.name in chan.ops:
 			chan.ops.append(char.name)
-			allAdmins.append(char.name)
 
 	def COR(self, item):
 		chan = getChannel(item.args['channel'])
@@ -476,6 +476,7 @@ class FListCommands(threading.Thread):
 			
 	def ICH(self, item):
 		chan = getChannel(item.args['channel'])
+		if chan.index==None: return
 		chan.users=[]
 		chars = item.args['users']
 		for x in chars:
@@ -498,8 +499,7 @@ class FListCommands(threading.Thread):
 						
 	def LCH(self, item):
 		chan = getChannel(item.args['channel'])
-		if chan.name == "Frontpage":
-			return
+		if chan.index==None: return
 		char = getUser(item.args['character'])
 		utils.log("User {} has left '{}'.".format(char.name, chan.name), 0)
 		chan.userLeft(char)
@@ -516,7 +516,6 @@ class FListCommands(threading.Thread):
 			ORSParse(data)
 			for x in config.channels:
 				getChannel(x).join()
-				#print ("Added callback to join {}".format(x))
 		except Exception:
 			utils.log(traceback.format_exc(), 2)
 		
@@ -692,6 +691,7 @@ class FListCommands(threading.Thread):
 			utils.saveData(admins, 'admins')
 			utils.saveData(datapipe.whitelist, 'whitelist')
 			utils.saveData(datapipe.blacklist, 'blacklist')
+			utils.saveData(datapipe.lastseenDict, 'lastseen')
 			for x in datapipe.pluginexit:
 				try:
 					func = getattr(x, "exit", None)
@@ -732,8 +732,9 @@ class FListCommands(threading.Thread):
 		if a ==-1:
 			reply("You need to put a ':' after the recipient's name, darling.", msg, 1)
 			return
-		sender = msg.params[:a]
-		recipient = msg.params[a:]
+		sender = msg.source.character.name
+		recipient = msg.params[:a]
+		message = msg.params[a:]
 		sendtime = datetime.datetime.now()
 		data = (sender, message, sendtime)
 		try:

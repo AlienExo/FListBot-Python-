@@ -30,9 +30,9 @@ def lastseen(self, msgobj, mode=0, mrec=0):
 		
 		else:
 			try:
-				data = self.lastseenDict[msgobj.params]
-				delta = datetime.datetime.now()-data
-				self.reply("{!s} was last seen on {}; {} ago.".format(msgobj.params, data.strptime("%A, %d.%m.%Y %H:%M"), utils.timeCalc(delta)[0]), msgobj)
+				date = self.lastseenDict[msgobj.params]
+				delta = datetime.datetime.now()-date
+				self.reply("{!s} was last seen on {}; {} ago.".format(msgobj.params, date.strftime("%A, %d.%m.%Y %H:%M"), utils.timeCalc(delta)[0]), msgobj)
 				
 			except:
 				traceback.print_exc()

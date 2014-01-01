@@ -6,7 +6,8 @@ import urllib2
 import string
 import re
 import traceback
-from BeautifulSoup import BeautifulSoup
+# from BeautifulSoup import BeautifulSoup
+from bs4 import BeautifulSoup
 
 user_agent = 'Mozilla/5.0 (Windows NT 5.1; rv:8.0) Gecko/20100101 Firefox/8.0'
 headers = { 'User-Agent' : user_agent }

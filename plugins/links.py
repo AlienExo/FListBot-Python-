@@ -6,7 +6,8 @@ import traceback
 import urllib2
 import random
 
-from BeautifulSoup import BeautifulSoup
+# from BeautifulSoup import BeautifulSoup
+from bs4 import BeautifulSoup
 
 www_re = re.compile('(((http|https)://)|(www\.))+([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?') 
 black_re=re.compile('(localhost)+|^(192\.168\.)+|^(10\.)+|^(127\.)+|^(172\.(1[6-9]|2\d|31)\.)')

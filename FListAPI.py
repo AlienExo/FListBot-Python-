@@ -1,4 +1,5 @@
-from BeautifulSoup import BeautifulSoup
+# from BeautifulSoup import BeautifulSoup
+from bs4 import BeautifulSoup
 import config
 import json
 from urllib import urlencode, quote
