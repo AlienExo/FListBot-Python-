@@ -17,13 +17,13 @@ loginAPI =	"http://www.f-list.net/json/getApiTicket.php"
 		
 """
 def parseFromJSON(data):
-	res={}
+	res = {u'Age':0}
 	data = data['info']
 	for key in data:
 		frag = data[key]['items']
 """		
 def parseFromHTML(data):
-	res = {}
+	res = {u'Age':0}
 	for x in data:
 		item = re.findall('<span class=.*>(.*):</span>(.*)', x)
 		if len(item)>0:
@@ -40,7 +40,6 @@ def getCharProfile(character, key):
 	
 #stuff like age, species, etc is in here:
 def getCharInfo(character, key):
-	res = {u'Age':0}
 	#resp=json.load(urllib2.urlopen("http://www.f-list.net/json/api/character-info.php", urlencode({'name':character, 'account': config.account, 'ticket': key, 'warning':1})))
 	#if resp[u'error']==u'You may not access this characters data.':
 	resp = opener.open("http://www.f-list.net/c/{}".format(quote(character)))
