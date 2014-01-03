@@ -23,7 +23,7 @@ import urllib2
 import utils
 import yaml
 from twisted.internet import defer, reactor, task, threads
-from autobahn.websocket import WebSocketClientFactory, WebSocketClientProtocol, connectWS
+from autobahn.twisted.websocket import WebSocketClientFactory, WebSocketClientProtocol, connectWS
 
 ignore_commands = ['FLN', 'STA', 'NLN', 'PIN', 'MSG', 'PRI', 'TPN', 'LIS', 'ORS', 'IDN', 'VAR', 'CDS', 'COL', 'ICH', 'JCH', 'LCH', 'CON', 'HLO', 'ERR', 'CKU']
 opener 			= urllib2.build_opener()

@@ -1,11 +1,11 @@
 #Cogito Flist Bot
 
 #Prerequisites
-*	[Python 2.7.6 or later](http://python.org)
+*	[Python 2.7.x or later](http://python.org)
 *	[BeautifulSoup 4.3.2](http://www.crummy.com/software/BeautifulSoup/), included under the terms of its MIT License.
-*	[Twisted 13.2.0 for Python 2.7.6](http://twistedmatrix.com)
+*	[Twisted 13.2.0 for Python 2.7.x](http://twistedmatrix.com)
 *	[Zope Interface](https://pypi.python.org/pypi/zope.interface#download)
-*	[Autobahn WebSocket library](http://autobahn.ws/)
+*	[Autobahn WebSocket 0.6.5 or later](http://autobahn.ws/)
 
 
 #Summary
