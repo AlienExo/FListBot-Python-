@@ -5,15 +5,15 @@
     and people who buy stationery.".format(config.character)', '"{} wishes to clarify
     that the bright light you saw after your ban was our in-silico ban technology,
     and not a higher power. Not higher than {}, anyway.".format(config.character)',
-  'So, how was the ban?', '"If any idiot ever tells you that life would be meaningless
-    without FList, {} recommends banning them.".format(config.character)', Aaaaaand
-    BAN!, B-b-b-b-ban!, 'Oh, it''s you again.', '"{} is sure none of that was your
+  "So, how was the ban?", '"If any idiot ever tells you that life would be meaningless
+    without FList, {} recommends banning them.".format(config.character)', 'Aaaaaand
+    BAN!', 'B-b-b-b-ban!', 'Oh, it''s you again.', '"{} is sure none of that was your
     fault.".format(config.character)', '"{} recommends channeling your post-ban frustration
     into pre-ban vengeful anger!".format(config.character)', '"{} would like to take
-    this opportunity to say: Goodbye!".format(config.character)', Don't think of your
-    ban as failure; think of it as fun!, 'So long as you believe in yourself, nothing
+    this opportunity to say: Goodbye!".format(config.character)', 'Don''t think of your
+    ban as failure; think of it as fun!', 'So long as you believe in yourself, nothing
     can TRULY stop you! Except an administrator.', '"{} respects all characters, so
-    long as they''re of age.".format(config.character)', Being banned is awesome!
-    All of the cool kids are doing it!, '"{}: You don''t get banned, until I say so.
+    long as they''re of age.".format(config.character)', 'Being banned is awesome!
+    All of the cool kids are doing it!', '"{}: You don''t get banned, until I say so.
     ".format(config.character)', '"{} reminds you: Some cause happiness wherever they
-    go; others whenever they go.".format(config.character)', '"{} says: 0111100 0110011".format(config.character)']
+    go; others whenever they go.".format(config.character)', '"{} says: 0111100 0110011".format(config.character)', 'EXTERMINATE! EXTERMINATE!', '"{} reminds you to read the rules. [sub]Creep.[/sub]".format(config.character)']

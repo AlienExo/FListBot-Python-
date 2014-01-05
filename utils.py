@@ -8,18 +8,21 @@ import time
 import traceback
 import yaml
 
-def log(text, ltype=1):
+def log(text, ltype=0, channel="System"):
 	"""Merely dresses up text with a timestamp and prints it (ltype 0), writes to '<BOT> events.log' (ltype 1), or '<BOT> errors.log' (ltype 2), or '<BOT> conversation.log'(type 3)"""
-	files=['', ' events', ' errors', ' conversation']
+	files=['', ' events', ' errors', channel]
+	print("{} -- ({}) {}".format(time.strftime("%c"), channel, text))
 	text="{} -- {}".format(time.strftime("%c"), text)
-	print(text)
+	if ltype==0: return
+	channel=channel.replace("/", " ")
+	channel=channel.replace("\\", " ")
 	text=text.encode('ascii', 'replace')
 	try:
-		with open('./logs/{}{}.log'.format(config.character, files[ltype]), 'a') as io:
+		with open('./logs/{} ({}).log'.format(config.character, channel, files[ltype]), 'a') as io:
 			io.write(text+"\n")
 
 	except IOError:
-		a = open('./logs/{}{}.log'.format(config.character, files[ltype]), 'w')
+		a = open('./logs/{} ({}).log'.format(config.character, channel, files[ltype]), 'w')
 		a.write(text+"\n")
 		a.close()	
 

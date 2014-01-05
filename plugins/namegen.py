@@ -1,4 +1,4 @@
-##1dbdc6da34094db4e661ed43aac83d91
+#1dbdc6da34094db4e661ed43aac83d91
 #!/usr/bin/python
 import random
 import traceback
@@ -49,8 +49,8 @@ def namegen(self, msg):
 		self.reply(', '.join(names), msg)
 	else:
 		try:
-			n_ngrams = int(self.args[0])
-			n_names = int(self.args[1])
+			n_ngrams = int(msg.args[0])
+			n_names = int(msg.args[1])
 			if n_ngrams>10 or n_names>10:
 				self.reply("Name generation for parameters over 10 is locked out.", msg, 0)
 				return

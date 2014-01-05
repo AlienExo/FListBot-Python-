@@ -45,6 +45,7 @@ class Channel():
 		self.name=name
 		self.key = ckey if ckey is not None else self.name
 		self.minage = 0
+		self.alertMods = False
 		self.index = None
 		self.users=[]
 		self.ops =[]
@@ -137,11 +138,11 @@ class User():
 def sendRaw(msg):
 	sendQueue.put(msg)
 	
-def sendText(message, route=1, char='Cogito', chan='private'):
+def sendText(message, route=1, char='Cogito', chan='PM'):
 	"""	Route	0			1			2				3				4
-		Target	Private		Channel		Channel+Prefix	Action in MSG	Action in PRI"""
+		Target	PM		Channel		Channel+Prefix	Action in MSG	Action in PRI"""
 	char=getUser(char).name
-	if chan=='private': route=0
+	if chan=='PM': route=0
 	else: chan=getChannel(chan).key
 	if route == 0:
 		msg = "PRI {}".format(json.dumps({'recipient':char, 'message':message})).encode('utf-8', 'replace')
@@ -151,7 +152,7 @@ def sendText(message, route=1, char='Cogito', chan='private'):
 		msg = "MSG {}".format(json.dumps({'channel':chan, 'message':message}))
 	elif route<5:
 		message = "/me "+message
-		if route==4 or chan=='private': 
+		if route==4 or chan=='PM': 
 			path="PRI" 
 			msg = "{} {}".format(path, json.dumps({'recipient':char, 'message':message}))
 		else: 
@@ -283,7 +284,7 @@ class Message():
 				text = text.strip()
 				self.args 	= text.split()
 				self.params = text
-				if self.cmd == 'PRI': chan=Channel("private", None)
+				if self.cmd == 'PRI': chan=Channel("PM", None)
 				else: chan = getChannel(self.msg_data['channel'])
 				self.source = Source(chan, char)
 				
@@ -358,14 +359,13 @@ def checkAge(age, char, chan):
 	chan=getChannel(chan)
 	char.age = age
 	if char.age>=chan.minage:
-		utils.log("User {} has passed inspection for {} (Age>{}), claiming to be {} years old.".format(char.name, chan.name, chan.minage, char.age), 0)
-		#sendText("Demonstration: User {} has passed inspection (Age>{}), being {} years old. Apparently.".format(char.name, config.minage, char.age), 0, 'Valorin Petrov')
+		utils.log("User {} has passed inspection for {} (Age>{}), claiming to be {} years old.".format(char.name, chan.name, chan.minage, char.age))
 		chan.userJoined(char.name)
 		telling(char, chan)
 		return
 		
 	if char.name in chan.whitelist: 
-		print ("{} is a whitelisted user for {}".format(char.name, chan.name))
+		print ("\t{} is a whitelisted user for {}".format(char.name, chan.name))
 		chan.userJoined(char.name)
 		telling(char, chan)
 		return
@@ -381,20 +381,26 @@ def checkAge(age, char, chan):
 		assert y
 		if char.age<chan.minage and char.age!=0:
 			sendText("User [color=red]below {}'s minimum age of {}:[/color] [user]{}[/user].".format(chan.name, chan.minage, char.name), 0, char=y)
-			utils.log("User {} under minimum age of {} for {}. Alerting {}.".format(char.name, chan.minage, chan.name, y.name), 1)
-			banter = eval(random.choice(banBanter))
+			utils.log("User {} under minimum age of {} for {}. Alerting {}.".format(char.name, chan.minage, chan.name, y.name),3, chan.name)
+			banter = random.choice(banBanter)
+			try:
+				banter = eval(banter)
+			except SyntaxError:
+				pass
 			sendText(banter, 2, char, chan)
-		#	print("\tExpulsion.")
-		#	char.kick(chan)
+			if config.character in chan.ops:
+				print("\tExpulsion.")
+				char.kick(chan)
 		
 		elif char.age == 0:
-			print("Cannot parse {}'s age. Informing Mod {}".format(char.name, y.name))
-			sendText("Can't verify user '[user]{}[/user]' for {}, minimum age set as {}. Please verify manually: [user]{}[/user] [sub]To add user to the channel's whitelist, reply '.white {} {}' in a PM. If you tell me in the channel, leave the number out.[/sub]".format(char.name, chan.name, chan.minage, char.name, char.name, chan.index), 0, char=y)
+			if chan.alertMods:
+				utils.log("Cannot parse {}'s age. Informing Mod {}".format(char.name, y.name), 3, chan.name)
+				sendText("Can't verify user '[user]{}[/user]' for {}, minimum age set as {}. Please verify manually: [user]{}[/user] [sub]To add user to the channel's whitelist, reply '.white {} {}' in a PM. If you tell me in the channel, leave the number out.[/sub]".format(char.name, chan.name, chan.minage, char.name, char.name, chan.index), 0, char=y)
 			chan.userJoined(char.name)
 			return
 		
 	except UnboundLocalError:
-		utils.log("Cannot fetch a mod, none logged in or set to online. Cannot verify user {} for {}.".format(char.name, chan.name), 2)
+		utils.log("Cannot fetch a mod, none logged in or set to online. Cannot verify user {} for {}.".format(char.name, chan.name), 3, chan.name)
 		return
 
 	except: traceback.print_exc()
@@ -418,12 +424,14 @@ class FListCommands(threading.Thread):
 		#	datapipe.admins.append(op)
 		
 	def CBU(self, item):
-		utils.log("{} was banned from {} by {}".format(item.args['character'], getChannel(item.args['channel']).name, item.args['operator']))
+		chan = getChannel(item.args['channel']).name
+		utils.log("{} was banned from {} by {}".format(item.args['character'], chan, item.args['operator']), 3, chan)
 		
 	def CDS(self, item):pass
 	
 	def CKU(self, item):
-		utils.log("{} was kicked from {} by {}".format(item.args['character'], getChannel(item.args['channel']).name, item.args['operator']))
+		chan = getChannel(item.args['channel']).name
+		utils.log("{} was kicked from {} by {}".format(item.args['character'], chan, item.args['operator']), 3, chan)
 		if config.banter and random.random<=config.banterchance:
 			a = eval(random.choice(banBanter))
 			reply(a, item, 2)
@@ -453,7 +461,7 @@ class FListCommands(threading.Thread):
 		chan.ops.remove(item.args['character'])
 		
 	def ERR(self, item):
-		utils.log("FList Error: Code {}. '{}'".format(item.args['number'], item.args['message']))
+		utils.log("FList Error: Code {}. '{}'".format(item.args['number'], item.args['message']), 2)
 		# if item.args['message']=="This command requires that you have logged in.":
 			# print("Fixing malformed login sequence...")
 			# reactor.callLater(1, sendRaw, "IDN {}".format(json.dumps({"method":"ticket","account":config.account,"character":config.character,"ticket":datapipe.key,"cname":"Cogito","cversion":config.version})))
@@ -487,18 +495,22 @@ class FListCommands(threading.Thread):
 	def JCH(self, item):
 		char = getUser(item.args['character']['identity'])
 		chan = getChannel(item.args['channel'])
-		utils.log("User {} has joined '{}'.".format(char.name, chan.name), 0)
 		if char.name == config.character: return
-		if char.name in chan.blacklist: char.kick(char)
-		if chan.minage == 0: return
-		d = threads.deferToThread(FListAPI.getAge, char.name, datapipe.key)
-		d.addCallback(checkAge, char=char, chan=chan)
+		utils.log("User {} has joined '{}'.".format(char.name, chan.name), 3, chan.name)
+		if char.name in chan.blacklist: 
+			utils.log("User {} is blacklisted and was promptly removed from '{}'.".format(char.name, chan.name), 3, chan.name)
+			chan.kick(char)
+			return
+		if ((chan.minage == 0) or (chan.alertMods == False)): return
+		else:
+			d = threads.deferToThread(FListAPI.getAge, char.name, datapipe.key)
+			d.addCallback(checkAge, char=char, chan=chan)
 						
 	def LCH(self, item):
 		chan = getChannel(item.args['channel'])
 		if chan.index==None: return
 		char = getUser(item.args['character'])
-		utils.log("User {} has left '{}'.".format(char.name, chan.name), 0)
+		utils.log("User {} has left '{}'.".format(char.name, chan.name), 3, chan.name)
 		chan.userLeft(char)
 		datapipe.lastseenDict[char.name]=datetime.datetime.now()
 					
@@ -528,7 +540,7 @@ class FListCommands(threading.Thread):
 			getUser(item.args['character']).status = item.args['status']			
 	
 	def SYS(self, item):
-		utils.log(item.args['message'])
+		utils.log(item.args['message'], 1)
 	
 	def TPN(self, item): pass
 		
@@ -593,14 +605,14 @@ class FListCommands(threading.Thread):
 		char = item.params
 		sendRaw("CKU {}".format(json.dumps({'channel': item.source.channel.key, 'character': char})))
 		reply("Command received. Removing '{}' from {}.".format(character, source.channel), item, 0)
-		utils.log("{} has kicked {} from {}.".format(item.source.character.name, char, item.source.channel.name), 1)
+		utils.log("{} has kicked {} from {}.".format(item.source.character.name, char, item.source.channel.name), 3, chan.name)
 	
 	def ban(self, item):
 		char = item.params	
 		sendRaw("CKU {}".format(json.dumps({'channel': item.source.channel.key, 'character': char})))
 		reply("Command received. Banning '{}' from {}.".format(character, source.channel), item, 0)
 		item.source.channel.blacklist.append(char)
-		utils.log("{} has banned {} from {}.".format(item.source.character.name, char, item.source.channel.name), 1)
+		utils.log("{} has banned {} from {}.".format(item.source.character.name, char, item.source.channel.name), 3, chan.name)
 	
 #	def kickban(self, character, channel=source.channel):
 #		kchannel = channelKey(channel)
@@ -660,7 +672,16 @@ class FListCommands(threading.Thread):
 			reply("Error: Cannot parse {} as a number.".format(item.args[0]), item, 0)
 		else:
 			saveChannelSettings()
-	
+			
+	def alertMods(self, item):
+		try:
+			item.source.channel.alertMods = not item.source.channel.alertMods
+			reply("Alert function set to '{!s}'. Moderators will{} be alerted to underage or unparseable characters.".format(item.source.channel.alertMods, ' not'*item.source.channel.alertMods), item)
+		except:
+			traceback.print_exc()
+		else:
+			saveChannelSettings()
+		
 	def rainbowText(self, item):
 		slist=[]
 		a = len(item.params)
@@ -684,7 +705,6 @@ class FListCommands(threading.Thread):
 			reactor.stop()
 			chans = {}
 			saveChannelSettings()
-			utils.saveData(utils.statsDict, '{} stats'.format(config.character))
 			utils.saveData(admins, 'admins')
 			utils.saveData(datapipe.whitelist, 'whitelist')
 			utils.saveData(datapipe.blacklist, 'blacklist')
@@ -696,7 +716,7 @@ class FListCommands(threading.Thread):
 				except:
 					traceback.print_exc()
 		except Exception, error:
-			utils.log("Error during shutdown: {}".format(error), 1)
+			utils.log("Error during shutdown: {}".format(error), 2)
 			traceback.print_exc()
 		else:
 			print('Shutdown successful. Goodbye, administrator.')
@@ -773,8 +793,8 @@ class FListProtocol(WebSocketClientProtocol, FListCommands):
 		
 """sendRaw and sendText both expect Message() instances, which have self.params (a dict for sendRaw, a string for sendText, similar to received messages), self.source (carried over from the incoming message object?) and that's about it?"""	
 def parseText(self, msg):
-	if not msg.params[:3]=="/me":utils.log( "({}) {}: \"{}\"".format(msg.source.channel.name, msg.source.character.name, msg.params), 3)
-	else: utils.log("({}) {}{}".format(msg.source.channel.name, msg.source.character.name, msg.params[3:]), 3)
+	if not msg.params[:3]=="/me":utils.log("{}: \"{}\"".format(msg.source.character.name, msg.params), 3, msg.source.channel.name)
+	else: utils.log("{}{}".format(msg.source.character.name, msg.params[3:]), 3, msg.source.channel.name)
 	try:
 		if msg.args[0] in datapipe.functions.keys():
 			#print ("\tCommand '{}' recognized.".format(msg.args[0]))
@@ -782,7 +802,7 @@ def parseText(self, msg):
 			msg.args = msg.args[1:]
 			msg.params = " ".join(msg.args)
 			#!!! CHANGE TO PARSING SYSTEM FOR CHANNELINDEPENDENT WHATEVERTHEFUCK
-			if msg.source.channel.name == "private": 
+			if msg.source.channel.name == "PM": 
 				msg.access_type = 0
 				index = None
 				try:
@@ -795,7 +815,7 @@ def parseText(self, msg):
 				if index is not None:
 					try:	
 						chan = datapipe.channels[index]
-						print("\tIndex found. Rerouting PM command '{}' from channel 'private' into '{}'.".format(func, chan.name))
+						print("\tIndex found. Rerouting PM command '{}' from channel 'PM' into '{}'.".format(func, chan.name))
 						msg.source.channel = chan
 					except IndexError:
 						reply("Command not executed: There is no channel with index {}. There are {} channels registered. To see the list, message me with '.lc'.".format(index, len(datapipe.channels)), msg)	
@@ -813,7 +833,7 @@ def parseText(self, msg):
 				msg.cf_level = 2
 				if msg.source.character.name in datapipe.admins: msg.cf_level=0
 				elif (msg.source.character.name in msg.source.channel.ops): msg.cf_level = 1
-				#if (msg.source.channel.name == 'private') and (msg.source.character.name in allAdmins): msg.cf_level = 1
+				#if (msg.source.channel.name == 'PM') and (msg.source.character.name in allAdmins): msg.cf_level = 1
 				#print msg.source.character.name, msg.source.channel.ops, datapipe.admins, msg.cf_level, msg.source.character.name in msg.source.channel.ops, msg.source.character.name in datapipe.admins
 				if msg.cf_level <= func_params[1]:
 					print ("\tHandling '{}'...".format(func_params[0]))
@@ -877,7 +897,7 @@ def handle_all_the_things(self, msgobj, cmd=None):
 			if callable(func):
 				func(self, msgobj)
 			else:
-				print("{} -- Unregistered command '{}'; {}".format(time.strftime("%c"), item.cmd, item.args))
+				print("{} -- Unregistered command '{}'; {}".format(time.strftime("%c"), msgobj.cmd, msgobj.args))
 				raise AttributeError
 				
 	except AttributeError, error:
@@ -949,6 +969,7 @@ def telling(char, chan):
 		for x in messages:
 			d = utils.timeFrac(datetime.datetime.now()-x[2])
 			sendText("[color=yellow]<{}> [color=green]{}[/color] ({} ago)[/color]".format(x[0], x[1], d[0]), 2, char, chan)
+	
 	except KeyError: pass
 	
 	except TypeError:
