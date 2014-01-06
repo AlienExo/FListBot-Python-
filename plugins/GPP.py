@@ -41,7 +41,7 @@ def loop(self, msgobj):
 							req = re.sub(name, '', req)
 							req = req.replace('/me', '')
 							req = req.replace('?', '')
-							req = req.replace('me', 'you')
+							req = req.replace(' me ', ' you ')
 							req = req.strip()
 							req.capitalize()
 							self.reply(msg.replace('{REQUEST}', req), msgobj, 1)	

@@ -174,7 +174,7 @@ def saveChannelSettings():
 			newinst.users = []
 			newinst.lastjoined = []
 			newinst.index = []
-			newinst.key = ""
+			#newinst.key = ""
 			chans[name]=newinst
 	utils.saveData(chans, 'channels')
 	for x in chans: del x
@@ -183,22 +183,18 @@ def saveChannelSettings():
 class DataPipe():
 	def __init__(self):
 		self.character		= config.character
-		self.blacklist		= utils.loadData('blacklist', list)
 		self.helpDict 		= utils.loadData('help', dict)
 		self.messageDict 	= utils.loadData('{} messages'.format(config.character), dict)
-		#self.usersDict 	= utils.loadData('users', dict)
-		self.whitelist		= utils.loadData('whitelist', list)
-		self.admins 		= config.admins + admins
 		self.functions		= config.functions
 		self.channels		= [Channel('Dummy')]
+		self.channelDict	= utils.loadData('channels', dict)
 		self.pluginexit		= []
 		self.pluginloops	= []
 		self.plugins 		= {}
-		self.channelDict	= utils.loadData('channels', dict)
 		self.dict_limits 	= {}
 		self.usersDict 		= {}
-		# self.lastseenDict 	= utils.loadData('lastseen', dict)
-		self.lastseenDict 	= {}
+		self.lastseenDict 	= utils.loadData('lastseen', dict)
+		#self.lastseenDict 	= {}
 		self.singer			= ""
 		self.song 			= ""
 		self.songlevel 		= 0
@@ -380,17 +376,20 @@ def checkAge(age, char, chan):
 	try:
 		assert y
 		if char.age<chan.minage and char.age!=0:
-			sendText("User [color=red]below {}'s minimum age of {}:[/color] [user]{}[/user].".format(chan.name, chan.minage, char.name), 0, char=y)
-			utils.log("User {} under minimum age of {} for {}. Alerting {}.".format(char.name, chan.minage, chan.name, y.name),3, chan.name)
-			banter = random.choice(banBanter)
 			try:
 				banter = eval(banter)
 			except SyntaxError:
 				pass
+			banter = chan.name+": "+banter
 			sendText(banter, 2, char, chan)
 			if config.character in chan.ops:
-				print("\tExpulsion.")
+				print("\tUnit is channel moderator. Kicking user.")
+				sendText("Your character {} is under the minimum age of {} for the channel '{}' and has thus been removed. If you wish to return, please do so with an of-age alias. {} wishes you a nice day.".format(char.name, chan.minage, config.character), 0, char)
 				char.kick(chan)
+			elif chan.alertMods:
+				sendText("User [color=red]below channel \"{}\"'s minimum age of {}:[/color] [user]{}[/user].".format(chan.name, chan.minage, char.name), 0, char=y)
+				utils.log("User {} under minimum age of {} for {}. Alerting {}.".format(char.name, chan.minage, chan.name, y.name),3, chan.name)
+				banter = random.choice(banBanter)
 		
 		elif char.age == 0:
 			if chan.alertMods:
@@ -421,7 +420,7 @@ class FListCommands(threading.Thread):
 	def ADL(self, item):pass
 		#ops = item.args['ops']
 		#for op in ops:
-		#	datapipe.admins.append(op)
+		#	datapipe.allAdmins.append(op)
 		
 	def CBU(self, item):
 		chan = getChannel(item.args['channel']).name
@@ -452,13 +451,16 @@ class FListCommands(threading.Thread):
 			
 	def COA(self, item):
 		chan = getChannel(item.args['channel'])
-		char = getUser(item.args['channel'])
 		if not char.name in chan.ops:
-			chan.ops.append(char.name)
+			chan.ops.append(item.args['character'])
 
 	def COR(self, item):
 		chan = getChannel(item.args['channel'])
-		chan.ops.remove(item.args['character'])
+		try:
+			chan.ops.remove(item.args['character'])
+			allAdmins.remove(item.args['character'])
+		except:
+			traceback.print_exc()
 		
 	def ERR(self, item):
 		utils.log("FList Error: Code {}. '{}'".format(item.args['number'], item.args['message']), 2)
@@ -501,7 +503,7 @@ class FListCommands(threading.Thread):
 			utils.log("User {} is blacklisted and was promptly removed from '{}'.".format(char.name, chan.name), 3, chan.name)
 			chan.kick(char)
 			return
-		if ((chan.minage == 0) or (chan.alertMods == False)): return
+		if chan.minage == 0: return
 		else:
 			d = threads.deferToThread(FListAPI.getAge, char.name, datapipe.key)
 			d.addCallback(checkAge, char=char, chan=chan)
@@ -580,16 +582,21 @@ class FListCommands(threading.Thread):
 	def op(self, item):
 		candidate = item.params
 		chan = item.source.channel
-		chan.ops.append(candidate)
+		if not candidate in chan.ops: chan.ops.append(candidate)
+		if not candidate in allAdmins: allAdmins.append(candidate)
 		reply("{} has been made a bot operator for {}.".format(candidate, item.source.channel.name), item)
 		utils.log("{} has been a bot operator for {} by {}.".format(candidate, chan.name, item.source.character.name), 1)
 		
 	def deop(self, item):
 		candidate = item.params
 		chan = item.source.channel
-		chan.ops.remove(candidate)
-		reply("{} is no longer a bot operator for {}.".format(candidate, item.source.channel.name), item)
-		utils.log("{} has is no longer a bot operator for {} by order of {}.".format(candidate, item.source.channel.name, item.source.character.name), 1)
+		try:
+			chan.ops.remove(candidate)
+			reply("{} is no longer a bot operator for {}.".format(candidate, item.source.channel.name), item)
+			utils.log("{} has is no longer a bot operator for {} by order of {}.".format(candidate, item.source.channel.name, item.source.character.name), 1)
+		except IndexError:
+			reply("[color=red][b]Error:[/b][/color] {} was not found in the bot operator registry for {}. Please check spelling and capitalization.".format(candidate, item.source.channel.name), item)
+			
 		
 	def join(self, item):
 		chan = getChannel(item.params)
@@ -705,9 +712,6 @@ class FListCommands(threading.Thread):
 			reactor.stop()
 			chans = {}
 			saveChannelSettings()
-			utils.saveData(admins, 'admins')
-			utils.saveData(datapipe.whitelist, 'whitelist')
-			utils.saveData(datapipe.blacklist, 'blacklist')
 			utils.saveData(datapipe.lastseenDict, 'lastseen')
 			for x in datapipe.pluginexit:
 				try:
@@ -831,10 +835,10 @@ def parseText(self, msg):
 			if msg.access_type in func_params[2]:
 				print("\tCorrect access type")
 				msg.cf_level = 2
-				if msg.source.character.name in datapipe.admins: msg.cf_level=0
+				if msg.source.character.name in datapipe.allAdmins: msg.cf_level=0
 				elif (msg.source.character.name in msg.source.channel.ops): msg.cf_level = 1
 				#if (msg.source.channel.name == 'PM') and (msg.source.character.name in allAdmins): msg.cf_level = 1
-				#print msg.source.character.name, msg.source.channel.ops, datapipe.admins, msg.cf_level, msg.source.character.name in msg.source.channel.ops, msg.source.character.name in datapipe.admins
+				#print msg.source.character.name, msg.source.channel.ops, datapipe.admins, msg.cf_level, msg.source.character.name in msg.source.channel.ops, msg.source.character.name in datapipe.allAdmins
 				if msg.cf_level <= func_params[1]:
 					print ("\tHandling '{}'...".format(func_params[0]))
 					handle_all_the_things(self, msg, func_params[0])
