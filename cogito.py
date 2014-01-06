@@ -312,6 +312,7 @@ class Message():
 			
 def load(self):
 	names=[]
+	print("Loading plugins...")
 	for root, sub, files in os.walk("./plugins/"):
 		for filename in files:
 			if filename.startswith('_'): continue
@@ -342,7 +343,7 @@ def load(self):
 		except:
 			traceback.print_exc()
 		else:
-			print("---plugin '{}' successfully initialized.".format(name))
+			print("\tPlugin '{}' successfully initialized.".format(name))
 		
 def ORSParse(data):
 	print "\nParsing ORS data. Some Assembly Required."
@@ -422,6 +423,9 @@ class FListCommands(threading.Thread):
 		#for op in ops:
 		#	datapipe.allAdmins.append(op)
 		
+	def BRO(self, item):
+		utils.log("Broadcast from {}: {}".format(item.args['character'], item.args['message']))
+		
 	def CBU(self, item):
 		chan = getChannel(item.args['channel']).name
 		utils.log("{} was banned from {} by {}".format(item.args['character'], chan, item.args['operator']), 3, chan)
@@ -435,6 +439,11 @@ class FListCommands(threading.Thread):
 			a = eval(random.choice(banBanter))
 			reply(a, item, 2)
 	
+	def COA(self, item):
+		chan = getChannel(item.args['channel'])
+		if not char.name in chan.ops:
+			chan.ops.append(item.args['character'])
+			
 	def COL(self, item):
 		ops = item.args['oplist']
 		chan = getChannel(item.args['channel'])
@@ -449,11 +458,6 @@ class FListCommands(threading.Thread):
 			io.write("{} {}\n".format(time.strftime("%c"), item.args['count']))
 		utils.log("{} users online.".format(int(item.args['count'])), 1)
 			
-	def COA(self, item):
-		chan = getChannel(item.args['channel'])
-		if not char.name in chan.ops:
-			chan.ops.append(item.args['character'])
-
 	def COR(self, item):
 		chan = getChannel(item.args['channel'])
 		try:
@@ -464,15 +468,12 @@ class FListCommands(threading.Thread):
 		
 	def ERR(self, item):
 		utils.log("FList Error: Code {}. '{}'".format(item.args['number'], item.args['message']), 2)
-		# if item.args['message']=="This command requires that you have logged in.":
-			# print("Fixing malformed login sequence...")
-			# reactor.callLater(1, sendRaw, "IDN {}".format(json.dumps({"method":"ticket","account":config.account,"character":config.character,"ticket":datapipe.key,"cname":"Cogito","cversion":config.version})))
-			# reactor.callLater(1.5, sendRaw, "ORS")
 			
 	def FLN(self, item):
 		char = getUser(item.args['character'])
 		for chan in datapipe.channelDict.values():
 			if char.name in chan.users:
+				utils.log("{} logged out.".format(char.name), 3, chan.name)
 				chan.userLeft(char)
 		
 	def FRL(self, item): pass
@@ -519,7 +520,6 @@ class FListCommands(threading.Thread):
 	def LIS(self, item):pass
 	def LRP(self, item):pass
 	def NLN(self, item):pass
-	def RLL(self, item):pass
 	
 	def ORS(self, item):
 		try:
@@ -530,12 +530,9 @@ class FListCommands(threading.Thread):
 		except Exception:
 			utils.log(traceback.format_exc(), 2)
 		
-		#this is important and needs to lock 'till it's done
-			#need a unique function to handle it?
-			#browse through recvQueue until you get one with ORS in it, put others back FIFO style, process ORS, release lock?
-			#spawn no new worker threads during lock, instead finish current thread, then parallel process merrily along?
-					
 	def PIN(self, item): sendRaw("PIN")
+	def RLL(self, item):pass
+					
 	
 	def STA(self, item):
 		if item.args['character'] in allAdmins:
@@ -656,7 +653,15 @@ class FListCommands(threading.Thread):
 		reply("The following {} users (out of a maximum {}) recently joined '{}': {}".format(numUsers, len(channel.lastjoined), channel.name, " ".join(users)), item, 0)
 		channel.lastjoined=channel.lastjoined[numUsers:]
 			
-	def unban(self, item):pass
+	def unban(self, item):
+		try:
+			item.source.channel.blacklist.remove(item.params)
+		except IndexError:
+			reply("Character '' not in Blacklist for {}. Please check channel, check spelling, and retry.".format(item.params, item.source.channel.name), item)
+		else:
+			reply("Character '' removed from blacklist for {}.".format(item.params, item.source.channel.name), item)
+			utils.log("{} removed from blacklist for {} by {}".format(item.params, item.source.channel.name, item.source.character.name), 3, item.source.channel.name)
+			
 	
 	def ignore(self, item):
 		if not item.source.character.name in item.source.chan.ignoreops:

@@ -83,7 +83,7 @@ dict_answers = {
 								"\"Wee paks ga chs mea?\"",
 								"\"Was paks ga chs na mea, en paul yor yora harton mea...Faura, cexm here, shellan mea. Fowrlle art fluy, presia sonwe.\"",
 								"\"Was ki ga faf so.\"",
-								"\"Was ki ga dict_answershierle.\"",
+								"\"Was ki ga hierle.\"",
 								"\"Was ki ga paul yor.\"",
 								"\"Yorr nille mea.\"",
 								"\"Was ki ga desfel.\"",

@@ -147,7 +147,7 @@ class Personality():
 			self.configref = config
 			sys.path.append(path)
 			self.code = __import__(code, tglobals)
-			print "Attempting Personality Test..."
+			print "\tTesting code execution for personality."
 			if callable(self.code.test): 
 				self.code.test()
 			else: raise ImportError
@@ -160,6 +160,7 @@ class Personality():
 			print ("Cannot call self.code.test. Either the .py does not have it or the import went wrong.")
 	
 def __init__(config):
+	print("Importing personalities. Please stand by.")
 	tglobals = globals()
 	personality = None
 	personalities = {}
@@ -169,14 +170,15 @@ def __init__(config):
 			for x in files:
 				if x[-3:]==".py":
 					codefile = x
-					print ("Codefile '"+codefile+"' found. Importing...")
+					print ("\tCodefile '"+codefile+"' found. Importing...")
 				if x[-4:]==".yml":
 					lines = x
-					print ("Lines '"+lines+"' found. Loading...")
+					print ("\tLines '"+lines+"' found. Loading...\n")
 				path = dirpath+'/'
 			personalities[codefile[:-3]]=(Personality(codefile[:-3], lines[:-4], path, tglobals, config))
+	print("Import complete.")
 	if len(personalities)>0:
-		print ("\nPERSONALITIES:")
+		print ("\n Available personalities:")
 		choices = {}
 		for number, item in enumerate(personalities):
 			choices[number+1]=item
@@ -187,8 +189,9 @@ def __init__(config):
 				personality = None
 				return
 			choice = int(choice)
+			print("Personality "+choice+" loaded.\n")
 			return personalities[choices[choice]]
 		except:
 			traceback.print_exc()
 	else:
-		print ("No personality found.")
+		print ("No personality found.\n")
