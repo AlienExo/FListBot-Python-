@@ -32,9 +32,10 @@ startuptime 	= datetime.datetime.now()
 sendQueue		= Queue.Queue()
 recvQueue 		= Queue.Queue()
 EventQueue 		= Queue.Queue()
+# whiteCounter 	= 1
 
 admins 			= utils.loadData('admins', list)
-allAdmins		= []
+chanAdmins		= []
 banBanter		= utils.loadData('banbanter', list)
 funcBanter		= utils.loadData('funcbanter', list)
 joinmsgDict 	= utils.loadData('joinmsg', dict)
@@ -312,7 +313,7 @@ class Message():
 			
 def load(self):
 	names=[]
-	print("Loading plugins...")
+	print("Loading plugins. Please stand by.")
 	for root, sub, files in os.walk("./plugins/"):
 		for filename in files:
 			if filename.startswith('_'): continue
@@ -344,6 +345,7 @@ def load(self):
 			traceback.print_exc()
 		else:
 			print("\tPlugin '{}' successfully initialized.".format(name))
+	print("Import complete.\n")
 		
 def ORSParse(data):
 	print "\nParsing ORS data. Some Assembly Required."
@@ -395,7 +397,12 @@ def checkAge(age, char, chan):
 		elif char.age == 0:
 			if chan.alertMods:
 				utils.log("Cannot parse {}'s age. Informing Mod {}".format(char.name, y.name), 3, chan.name)
-				sendText("Can't verify user '[user]{}[/user]' for {}, minimum age set as {}. Please verify manually: [user]{}[/user] [sub]To add user to the channel's whitelist, reply '.white {} {}' in a PM. If you tell me in the channel, leave the number out.[/sub]".format(char.name, chan.name, chan.minage, char.name, char.name, chan.index), 0, char=y)
+				sendText("Can't verify user '[user]{}[/user]' for {}, minimum age set as {}. Please verify manually: [user]{}[/user]. [sub]To add user to the channel's whitelist, reply '.white {} {}' in a PM. If you tell me in the channel, leave the number out.[/sub]".format(char.name, chan.name, chan.minage, char.name, char.name, chan.index), 0, char=y)
+				# sendText("Can't verify user '[user]{}[/user]' for {}, minimum age set as {}. Please verify manually: [user]{}[/user]. [sub]To add user to the channel's whitelist, reply 'confirm {}' in the channel or this PM.[/sub]".format(char.name, chan.name, chan.minage, char.name, char.name, whiteCounter), 0, char=y)
+				# whiteCounter += 1
+				# _whitelist does not exist.
+				# _whitelist does not exist.
+				# EventQueue.put(y.name, 'confirm {}'.format(whiteCounter), _whitelist(chan.name, char))
 			chan.userJoined(char.name)
 			return
 		
@@ -421,7 +428,7 @@ class FListCommands(threading.Thread):
 	def ADL(self, item):pass
 		#ops = item.args['ops']
 		#for op in ops:
-		#	datapipe.allAdmins.append(op)
+		#	chanAdmins.append(op)
 		
 	def BRO(self, item):
 		utils.log("Broadcast from {}: {}".format(item.args['character'], item.args['message']))
@@ -429,6 +436,10 @@ class FListCommands(threading.Thread):
 	def CBU(self, item):
 		chan = getChannel(item.args['channel']).name
 		utils.log("{} was banned from {} by {}".format(item.args['character'], chan, item.args['operator']), 3, chan)
+		
+	def CCR(self, item):
+		print ("\nCCR RESPONSE")
+		print item.args, item.params
 		
 	def CDS(self, item):pass
 	
@@ -450,8 +461,8 @@ class FListCommands(threading.Thread):
 		for op in ops:
 			if not op in chan.ops: 
 				chan.ops.append(op)
-				allAdmins.append(op)
-		print ("Channel operators for "+chan.name +": "+ str(chan.ops))
+				chanAdmins.append(op)
+		print ("Channel operators for "+chan.name+": "+ ", ".join(chan.ops))
 		
 	def CON(self, item):
 		with open('./data/user stats.txt', 'a') as io:
@@ -462,7 +473,7 @@ class FListCommands(threading.Thread):
 		chan = getChannel(item.args['channel'])
 		try:
 			chan.ops.remove(item.args['character'])
-			allAdmins.remove(item.args['character'])
+			chanAdmins.remove(item.args['character'])
 		except:
 			traceback.print_exc()
 		
@@ -535,7 +546,7 @@ class FListCommands(threading.Thread):
 					
 	
 	def STA(self, item):
-		if item.args['character'] in allAdmins:
+		if item.args['character'] in chanAdmins:
 			getUser(item.args['character']).status = item.args['status']			
 	
 	def SYS(self, item):
@@ -578,9 +589,10 @@ class FListCommands(threading.Thread):
 		
 	def op(self, item):
 		candidate = item.params
+		if len(candidate)==0: candiate = item.source.character.name
 		chan = item.source.channel
 		if not candidate in chan.ops: chan.ops.append(candidate)
-		if not candidate in allAdmins: allAdmins.append(candidate)
+		if not candidate in chanAdmins: chanAdmins.append(candidate)
 		reply("{} has been made a bot operator for {}.".format(candidate, item.source.channel.name), item)
 		utils.log("{} has been a bot operator for {} by {}.".format(candidate, chan.name, item.source.character.name), 1)
 		
@@ -617,6 +629,15 @@ class FListCommands(threading.Thread):
 		reply("Command received. Banning '{}' from {}.".format(character, source.channel), item, 0)
 		item.source.channel.blacklist.append(char)
 		utils.log("{} has banned {} from {}.".format(item.source.character.name, char, item.source.channel.name), 3, chan.name)
+		
+	def _method_metafalica(self, item):
+		print item.params
+		newchannel=item.params
+		sendRaw("CCR {}".format(json.dumps({'channel':newchannel})))
+		
+	def method_metafalica(self, item):
+		reply("Was ki ga exec hymme METAFALICA reta tie manac dor." , item, 3)
+		EventQueue.put(item.source.character.name, 'exec hymme METAFALICA >>', _method_metafalica)
 	
 #	def kickban(self, character, channel=source.channel):
 #		kchannel = channelKey(channel)
@@ -840,10 +861,11 @@ def parseText(self, msg):
 			if msg.access_type in func_params[2]:
 				print("\tCorrect access type")
 				msg.cf_level = 2
-				if msg.source.character.name in datapipe.allAdmins: msg.cf_level=0
+				if msg.source.character.name in config.admins: msg.cf_level=0
+				elif msg.source.character.name in datapipe.chanAdmins: msg.cf_level=1
 				elif (msg.source.character.name in msg.source.channel.ops): msg.cf_level = 1
-				#if (msg.source.channel.name == 'PM') and (msg.source.character.name in allAdmins): msg.cf_level = 1
-				#print msg.source.character.name, msg.source.channel.ops, datapipe.admins, msg.cf_level, msg.source.character.name in msg.source.channel.ops, msg.source.character.name in datapipe.allAdmins
+				#if (msg.source.channel.name == 'PM') and (msg.source.character.name in chanAdmins): msg.cf_level = 1
+				#print msg.source.character.name, msg.source.channel.ops, datapipe.admins, msg.cf_level, msg.source.character.name in msg.source.channel.ops, msg.source.character.name in chanAdmins
 				if msg.cf_level <= func_params[1]:
 					print ("\tHandling '{}'...".format(func_params[0]))
 					handle_all_the_things(self, msg, func_params[0])
@@ -996,15 +1018,21 @@ def qsend():
 def mainloop():
 	try:
 		"""doesn't do anything if EventQueue empty. instead of eventQueue, threading and conditions?"""
-		#while EventQueue.qsize()>0:
-		#	try: 
-		#		func, data = EventQueue.get_nowait()
-		#		func(data)
-		#	except Queue.Empty: pass
-		#	except Exception: traceback.print_exc()
-		#Like, (Person who talked to you, function to call when you hear them again, condition to remove this part of the stack)
-		
 		item, self = recvQueue.get_nowait()
+		#SUPER EXPERIMENTAL DANGER WILL ROBINSON
+		if EventQueue.qsize()>0:
+			try: 
+				person, trigger, func = EventQueue.get_nowait()
+				if not person in config.admins: return
+				print person, trigger, func, item.source.character.name, item.params
+				if item.source.character.name == person and trigger in item.params:
+					item.params = item.params.split(trigger)[1]
+					print item.params
+					func(self, item)
+					return
+			except Queue.Empty: pass
+			except Exception: traceback.print_exc()
+		# END SUPER EXPERIMENTAL
 		if datapipe.personality != None: 
 			datapipe.personality.code.handle(self, item.cmd, item.params) 
 		if item.cmd not in ['MSG', 'PRI']:
