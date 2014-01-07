@@ -1,36 +1,27 @@
 from difflib import SequenceMatcher as matcher
 
-singer=""
-song = ""
-song_flag=False
-valid=False
-dict_limits={}
-
-
-
-dict_firstlines = 	{
-					"Was yea ra enne ar ciel":'EXEC_HIBERNATION',
-					"Was yea ra frreie yor wart en chs manaf an yor synk sor al memora en knawa ar tonelico":'EXEC_LINKER',
-					"Rrha apea gagis paul ini ar ciel,":'EXEC_NULLASCENSION',
-					#"Rrha ki ra exec hymmnos PURGER en yehar nha near yor":'EXEC_PURGER',
-					"Was yea ra waath near en hymme RE=NATION mea.":'EXEC_RE=NATION',
-					#"Rrha ki ra nha_HYMMNOS/1x01 >> pat mea en xest DIVIEGA=SIANN > A2.":'EXEC_SOL=FAGE',
-					"Kiafa hynne mea? Pagle tes yor":'EXEC_SPHILIA',
-					#"Hierle faura murfan anw yeeel ciel.":'EXEC_VIENA',
-					#"":'EXEC_over.METHOD_SUBLIMATION',
-					#"xN rre harr f.s. tes maoh ess ouvyu sechel":'METHOD_IMPLANTA',
-					"hYAmmrA cEzE hymmnos ceku":'METHOD_METAFALICA',
-					#"xA rre wArAmA maen a.u.k. zess titia":'METHOD_REPLEKIA',
-					}
-					
+class Song():
+	def __init__(self, singer, song):
+		self.singer			= singer
+		self.song 			= song
+		self.level 			= 0		
+		lines 				= dict_songs[song]
+		self.songiterator 	= iter(lines)
+		self.maxLevel 		= len(lines)
+		self.func 		= functions[song]
+		
+		
+functions = {'EXEC_HIBERNATION':"hibernation", 'METHOD_METAFALICA':"_method_metafalica", 'EXEC_LINKER':"_op"}
+		
 dict_songs =	{
+				'EXEC_HIBERNATION':["Was yea ra enne ar ciel", 
+									"Rrha num ra sleipir etealune na near na morto ciel"],
+									
 				'EXEC_CHRONICLE=KEY':[	"Was au ga whai pauwel gaunji yasra whou na cenjue sor tou zuieg", 
 										"Was ki ra, grandi en eterne slepir, presia aterra cremia sos viuy lonfa, yehar lamenza der soare mea"],
 										
 				'EXEC_DESPEDIA':[	"Rrha yea ra haf yor, forgandal knawa Manac yor, Manac"],
 									
-				'EXEC_HIBERNATION':["Initiate shutdown sequence.", 
-									"As administrator, I order: Sleep."],
 									
 				'EXEC_LINKER':[	"Was yea ra frreie yor wart en chs manaf an yor synk sor al memora en knawa ar tonelico"],
 								
@@ -69,28 +60,25 @@ dict_songs =	{
 				
 				'METHOD_IMPLANTA':[],
 				
-				'METHOD_METAFALICA':["hYAmmrA cEzE hymmnos ceku"],
+				'METHOD_METAFALICA':["Was paks ra faja juez/.", "Over the earth, for many years dry without rain, sounds of droplets fall, each fleeting, each precious..."],
 				
 				'METHOD_REPLEKIA':[	"xO herr mLYOrArA du sphaela, m.t.y.y. giz wOsLYI du giz/.", 
 									"xN rre hLYImLYUmOrO a.u.k. zess quesa byui q.l.s. du sechel/.", 
-									"xA herr nAtAnO hymmnos, ut ouvyu m.r.r. du daedu ag ujes/."], 
-									
-				}
+									"xA herr nAtAnO hymmnos, ut ouvyu m.r.r. du daedu ag ujes/."]}
 						
 dict_answers = {
-				'EXEC_SPHILIA':["\"Fou paks ga kiafa hynne yor.\"",
-								"\"Wee paks ga faf yora accrroad mea?\"",
-								"\"Wee paks ga chs mea?\"",
-								"\"Was paks ga chs na mea, en paul yor yora harton mea...Faura, cexm here, shellan mea. Fowrlle art fluy, presia sonwe.\"",
-								"\"Was ki ga faf so.\"",
-								"\"Was ki ga hierle.\"",
-								"\"Was ki ga paul yor.\"",
-								"\"Yorr nille mea.\"",
-								"\"Was ki ga desfel.\"",
-								"\"Was ki ga ween shell.\"",
-								"\"Was ki ga paul yor.\"",
-								"\"Mea nille yorr.\"",
-								"\"Mea irs here aulla omnis en noes irs sphilar aulla omnis\""]
+				'EXEC_SPHILIA':{1:"\"Fou paks ga kiafa hynne yor.\"",
+								2:"\"Wee paks ga faf yora accrroad mea?\"",
+								3:"\"Wee paks ga chs mea?\"",
+								4:"\"Was paks ga chs na mea, en paul yor yora harton mea...Faura, cexm here, shellan mea. Fowrlle art fluy, presia sonwe.\"",
+								5:"\"Was ki ga faf so.\"",
+								6:"\"Was ki ga hierle.\"",
+								7:"\"Was ki ga paul yor.\"",
+								8:"\"Yorr nille mea.\"",
+								9:"\"Was ki ga desfel.\"",
+								10:"\"Was ki ga ween shell.\"",
+								11:"\"Was ki ga paul yor.\"",
+								12:"\"Mea nille yorr.\"",
+								16:"\"Mea irs here aulla omnis en noes irs sphilar aulla omnis\""},
+				'METHOD_METAFALICA':{1:"Was granme ra chs sos yor/.", 2:"Soon the blooming flowers will color this land."}
 			}
-			
-dict_alimits = {'EXEC_SPHILIA':[1,2,3,4,5,6,7,8,9,10,11,12,16]}

@@ -31,7 +31,7 @@ opener.addheaders.append(('Cookie', 'warning=1'))
 startuptime 	= datetime.datetime.now()
 sendQueue		= Queue.Queue()
 recvQueue 		= Queue.Queue()
-EventQueue 		= Queue.Queue()
+# EventQueue 		= []
 # whiteCounter 	= 1
 
 admins 			= utils.loadData('admins', list)
@@ -189,18 +189,20 @@ class DataPipe():
 		self.functions		= config.functions
 		self.channels		= [Channel('Dummy')]
 		self.channelDict	= utils.loadData('channels', dict)
+		self.songs 			= []
 		self.pluginexit		= []
 		self.pluginloops	= []
-		self.plugins 		= {}
 		self.dict_limits 	= {}
+		self.plugins 		= {}
 		self.usersDict 		= {}
 		self.lastseenDict 	= utils.loadData('lastseen', dict)
-		#self.lastseenDict 	= {}
+		"""
 		self.singer			= ""
 		self.song 			= ""
 		self.songlevel 		= 0
 		self.song_flag 		= False
 		self.success_flag 	= False
+		"""
 		self.personality	= None
 		
 	def loadData(self, file, expected=dict):
@@ -402,7 +404,7 @@ def checkAge(age, char, chan):
 				# whiteCounter += 1
 				# _whitelist does not exist.
 				# _whitelist does not exist.
-				# EventQueue.put(y.name, 'confirm {}'.format(whiteCounter), _whitelist(chan.name, char))
+				# EventQueue.append((y.name, 'confirm {}'.format(whiteCounter), _whitelist(chan.name, char)))
 			chan.userJoined(char.name)
 			return
 		
@@ -630,15 +632,16 @@ class FListCommands(threading.Thread):
 		item.source.channel.blacklist.append(char)
 		utils.log("{} has banned {} from {}.".format(item.source.character.name, char, item.source.channel.name), 3, chan.name)
 		
-	def _method_metafalica(self, item):
+	def method_metafalica(self, item):
 		print item.params
 		newchannel=item.params
 		sendRaw("CCR {}".format(json.dumps({'channel':newchannel})))
-		
-	def method_metafalica(self, item):
-		reply("Was ki ga exec hymme METAFALICA reta tie manac dor." , item, 3)
-		EventQueue.put(item.source.character.name, 'exec hymme METAFALICA >>', _method_metafalica)
 	
+	
+#	def _method_metafalica(self, item):
+#		reply("Was ki ga exec hymme METAFALICA reta tie manac dor." , item)
+#		EventQueue.append((item.source.character.name, 'exec hymme METAFALICA ', 'method_metafalica'))
+#	
 #	def kickban(self, character, channel=source.channel):
 #		kchannel = channelKey(channel)
 #		sendText("CKU {}".format(json.dumps({'channel': kchannel, 'character': character})), 5)
@@ -763,15 +766,15 @@ class FListCommands(threading.Thread):
 			reply("No entry for command '{}'. Please check your syntax and try again.".format(msg.args[1]) , 0)
 			
 		except IndexError:	
-			reply("{} F-List Bot, v{}.".format(config.character, config.version), 0)
-			reply("Please note: All commands are executed in the channel they are received from. In case of a PM, you may specify a channel via its ID number. E.g. .kick 1 A Bad Roleplayer will kick A Bad RolePlayer from channel #1. To get a list of IDs and channels, use the command '.lc'. A command without an ID will be parsed as the 'default' channel, here: {}".format(config.channels[0]))
-			reply("The following functions are available:")
+			reply("{} F-List Bot, v{}.".format(config.character, config.version), msg, 0)
+			reply("Please note: All commands are executed in the channel they are received from. In case of a PM, you may specify a channel via its ID number. E.g. .kick 1 A Bad Roleplayer will kick A Bad RolePlayer from channel #1. To get a list of IDs and channels, use the command '.lc'. A command without an ID will be parsed as the 'default' channel, here: {}".format(config.channels[0]), msg, 0)
+			reply("The following functions are available:", msg, 0)
 			func=[]
 			for x in datapipe.helpDict.keys():
 				func.append(x)
 			func.sort()
 			for x in func:
-				reply("--{}: {!s}".format(x, datapipe.helpDict[x]), 0)
+				reply("--{}: {!s}".format(x, datapipe.helpDict[x]), msg, 0)
 
 	def tell(self, msg):
 		sender = msg.source.character.name
@@ -862,51 +865,35 @@ def parseText(self, msg):
 				print("\tCorrect access type")
 				msg.cf_level = 2
 				if msg.source.character.name in config.admins: msg.cf_level=0
-				elif msg.source.character.name in datapipe.chanAdmins: msg.cf_level=1
+				elif msg.source.character.name in chanAdmins: msg.cf_level=1
 				elif (msg.source.character.name in msg.source.channel.ops): msg.cf_level = 1
 				#if (msg.source.channel.name == 'PM') and (msg.source.character.name in chanAdmins): msg.cf_level = 1
 				#print msg.source.character.name, msg.source.channel.ops, datapipe.admins, msg.cf_level, msg.source.character.name in msg.source.channel.ops, msg.source.character.name in chanAdmins
 				if msg.cf_level <= func_params[1]:
 					print ("\tHandling '{}'...".format(func_params[0]))
 					handle_all_the_things(self, msg, func_params[0])
+					return
 				else:
 					reply("You do not have the necessary permissions to execute function '{}' in channel '{}'.".format(func_params[0], msg.source.channel.name), msg)
+					return
 					
 	except IndexError:
 		traceback.print_exc()
 		
-	if datapipe.song != "":
-		if datapipe.singer == msg.source.character.name:
-			try:
-				_listen(self, msg, datapipe.song, datapipe.songiter, datapipe.dict_limits[datapipe.singer])
+	for songinst in datapipe.songs:
+		if songinst.singer == msg.source.character.name:
+			listen(msg, songinst)
 
-			except AttributeError, error:
-				try:
-					datapipe.song = songs.dict_firstlines[msg.params]
-					datapipe.songiter = iter(songs.dict_songs[datapipe.song])
-					datapipe.singer = self.source.character.name
-					_listen(self, msg, datapipe.song, datapipe.songiter, datapipe.dict_limits[datapipe.singer])
-				except Exception:
-					traceback.print_exc()
-				finally:	
-					_songreset()
-
-	for x in songs.dict_firstlines: 
-		if songs.matcher(lambda x: x==" ", msg.params, x).ratio() > 0.75:
-			try:
-				datapipe.song = songs.dict_firstlines[x]
-				datapipe.songiter = iter(songs.dict_songs[datapipe.song])
-				datapipe.singer = msg.source.character.name
-				datapipe.dict_limits[datapipe.singer]=0
-				datapipe.song_flag = True
-
-			except (IndexError, RuntimeError, TypeError, NameError) as function_error:
-				print("Error whilst listening to text command: {}".format(function_error), 2)
+	for song, lines in songs.dict_songs.items(): 
+		try:
+			if songs.matcher(lambda x: x==" ", msg.params, lines[0]).ratio() > 0.75:
+				asong=songs.Song(msg.source.character.name, song)
+				datapipe.songs.append(asong)
+				listen(msg, asong)
+		except IndexError: pass
+		except Exception as function_error:
+				print("Error whilst listening to text command: {}".format(function_error, function_error.args), 2)
 				traceback.print_exc()
-				datapipe.song_flag = False
-
-			if datapipe.song_flag == True:
-				_listen(self, msg, datapipe.song, datapipe.songiter, datapipe.dict_limits[datapipe.singer])
 
 	for x in datapipe.pluginloops:
 		if callable(x):
@@ -942,52 +929,39 @@ def handle_all_the_things(self, msgobj, cmd=None):
 		if config.banter and (cmd in config.functions.keys()) and (random.random>config.banterchance):
 			reply(eval(random.choice(funcBanter)), msgobj)
 	
-def _songreset():
-	datapipe.song = ""
-	datapipe.songiter = None
-	datapipe.singer = ""
-	datapipe.dict_limits[datapipe.singer]=0
-	datapipe.song_flag = False			
-	datapipe.success_flag = False			
-			
-def _listen(self, msg, song, iter, limit):
-	print("Listening to {}; limit {}".format(datapipe.song, limit))
-	datapipe.songdata = songs.dict_songs[datapipe.song]
-	datapipe.max_limit = len(datapipe.songdata)
+def listen(msg, songinst):
+	print("\tListening to {}; limit {}".format(songinst.song, songinst.level))
 	try:
-		datapipe.songline2 = iter.next()
+		songinst.nextline = songinst.songiterator.next()
 	except StopIteration:
 		reply("Song rejected.", 0)
-		_songreset()
-		pass
+		datapipe.songs.remove(songinst)
+		return
 	
-	if songs.matcher(lambda x: x == " ", msg.params, datapipe.songline2).ratio() > config.min_ratio:
-		datapipe.dict_limits[datapipe.singer]+=1
-		datapipe.success_flag = True
-		if datapipe.song in songs.dict_answers and datapipe.dict_limits[datapipe.singer] in songs.dict_alimits[datapipe.song]:
-			print("I want to reply.")
-			sreply = songs.dict_answers[datapipe.song][datapipe.dict_limits[datapipe.singer]-1]
-			reply(str(sreply), 2)
+	if songs.matcher(lambda x: x == " ", msg.params, songinst.nextline).ratio() > 0.7:
+		songinst.level+=1
+		if songinst.song in songs.dict_answers:
+			try:
+				sreply = songs.dict_answers[songinst.song][songinst.level]
+				reply(str(sreply), msg, 2)
+			except KeyError, IndexError:
+				pass
 	
 	elif ("exec waath" in msg.params.lower()):
-		_songreset()
+		datapipe.songs.remove(songinst)
 	
 	else:
 		print("No match, no endline.")
-		reply("Access denied", 0)
-		_songreset()
+		reply("Access denied", msg)
+		datapipe.songs.remove(songinst)
 		
-	if datapipe.dict_limits[datapipe.singer] >= datapipe.max_limit:
+	if songinst.level >= songinst.maxLevel:
 		try:
-			#handle_all_the_things needs a Message instance!
-			msg=Message('MSG {\'message\':\'A MESSAGE NEEDS TO BE HERE\'}')
-			handle_all_the_things(self, msg, config.cf_list[datapipe.song])
+			handle_all_the_things(datapipe.FListProtocol, msg, songinst.func)
 		finally:
-			_songreset()
-		
-	elif datapipe.success_flag == False:
-		reply("Access denied", 0)
-		_songreset()		
+			datapipe.songs.remove(songinst)
+			
+			
 		
 def telling(char, chan):
 	messages=[]
@@ -1020,18 +994,21 @@ def mainloop():
 		"""doesn't do anything if EventQueue empty. instead of eventQueue, threading and conditions?"""
 		item, self = recvQueue.get_nowait()
 		#SUPER EXPERIMENTAL DANGER WILL ROBINSON
-		if EventQueue.qsize()>0:
-			try: 
-				person, trigger, func = EventQueue.get_nowait()
-				if not person in config.admins: return
-				print person, trigger, func, item.source.character.name, item.params
-				if item.source.character.name == person and trigger in item.params:
-					item.params = item.params.split(trigger)[1]
-					print item.params
-					func(self, item)
-					return
-			except Queue.Empty: pass
-			except Exception: traceback.print_exc()
+		# if len(EventQueue)>0:
+			# try: 
+				# person, trigger, func = EventQueue[0]
+				# if not person in config.admins: 
+					# return
+				# if item.source.character.name == person and trigger in item.params:
+					# item.params = item.params.split(trigger)[1]
+					# print item.params
+					# func = getattr(FListCommands, '{}'.format(func), None)
+					# if func: 
+						# func(self, item)
+						# EventQueue.pop()
+						# return
+			# except IndexError: pass
+			# except Exception: traceback.print_exc()
 		# END SUPER EXPERIMENTAL
 		if datapipe.personality != None: 
 			datapipe.personality.code.handle(self, item.cmd, item.params) 

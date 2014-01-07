@@ -40,7 +40,7 @@ functions = {
 			".leave":		("leave",		0, [0,1]),
 			".minage":		("minage",		0, [0,1]),
 			".op":			("op", 			0, [0,1]),
-			
+					
 			".act":			("act",			1, [0,1]),
 			".ban":			("ban", 		1, [0,1]),
 			".black":		("blacklist",	1, [0,1]),
