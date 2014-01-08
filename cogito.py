@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 #when leaving channel, replace datapipe.channels value with Null to prevent 1 becomine 2, 2 becoming 3.
 #rewrite logging system to be per-channel, perhaps look into creating subfolders.
+from collections import deque
 import config
 from copy import deepcopy
 import datetime
@@ -9,7 +10,6 @@ import importlib
 import json
 import os
 import personality
-import Queue
 import random
 import re
 import songs
@@ -29,9 +29,9 @@ ignore_commands = ['FLN', 'STA', 'NLN', 'PIN', 'MSG', 'PRI', 'TPN', 'LIS', 'ORS'
 opener 			= urllib2.build_opener()
 opener.addheaders.append(('Cookie', 'warning=1'))
 startuptime 	= datetime.datetime.now()
-sendQueue		= Queue.Queue()
-recvQueue 		= Queue.Queue()
-# EventQueue 		= []
+sendQueue		= deque()
+recvQueue 		= deque()
+EventQueue 		= deque()
 # whiteCounter 	= 1
 
 admins 			= utils.loadData('admins', list)
@@ -137,7 +137,7 @@ class User():
 	def ascend(self):pass
 	
 def sendRaw(msg):
-	sendQueue.put(msg)
+	sendQueue.append(msg)
 	
 def sendText(message, route=1, char='Cogito', chan='PM'):
 	"""	Route	0			1			2				3				4
@@ -159,7 +159,7 @@ def sendText(message, route=1, char='Cogito', chan='PM'):
 		else: 
 			path="MSG"
 			msg = "{} {}".format(path, json.dumps({'channel':chan, 'message':message}))
-	sendQueue.put(msg)
+	sendQueue.append(msg)
 	
 def reply(message, item, path_override=None):
 	if not hasattr(item, 'access_type'): item.access_type = 0
@@ -511,6 +511,9 @@ class FListCommands(threading.Thread):
 	def JCH(self, item):
 		char = getUser(item.args['character']['identity'])
 		chan = getChannel(item.args['channel'])
+		if chan.name[:2]=="ADH": 
+			chan.name=item.args['title']
+			chan.key=item.args['channel']
 		if char.name == config.character: return
 		utils.log("User {} has joined '{}'.".format(char.name, chan.name), 3, chan.name)
 		if char.name in chan.blacklist: 
@@ -822,7 +825,7 @@ class FListProtocol(WebSocketClientProtocol, FListCommands):
 	def onMessage(self, msg, binary):
 		# msg = msg.decode('ascii', 'ignore')
 		message = Message(msg)
-		recvQueue.put((message, self))
+		recvQueue.append((message, self))
 		
 """sendRaw and sendText both expect Message() instances, which have self.params (a dict for sendRaw, a string for sendText, similar to received messages), self.source (carried over from the incoming message object?) and that's about it?"""	
 def parseText(self, msg):
@@ -985,30 +988,29 @@ def telling(char, chan):
 		
 def qsend():
 	try:
-		item = sendQueue.get_nowait()
+		item = sendQueue.popleft()
 		datapipe.FListProtocol.sendMessage(item.encode('utf-8'))
-	except Queue.Empty:	pass
+	except IndexError:	pass
 		
 def mainloop():
 	try:
 		"""doesn't do anything if EventQueue empty. instead of eventQueue, threading and conditions?"""
-		item, self = recvQueue.get_nowait()
-		#SUPER EXPERIMENTAL DANGER WILL ROBINSON
-		# if len(EventQueue)>0:
-			# try: 
-				# person, trigger, func = EventQueue[0]
-				# if not person in config.admins: 
-					# return
-				# if item.source.character.name == person and trigger in item.params:
-					# item.params = item.params.split(trigger)[1]
-					# print item.params
-					# func = getattr(FListCommands, '{}'.format(func), None)
-					# if func: 
-						# func(self, item)
-						# EventQueue.pop()
-						# return
-			# except IndexError: pass
-			# except Exception: traceback.print_exc()
+		item, self = recvQueue.popleft()
+		# SUPER EXPERIMENTAL DANGER WILL ROBINSON
+		if len(EventQueue)>0:
+			try: 
+				person, trigger, func = EventQueue.popleft()
+				if item.source.character.name == person and trigger in item.params:
+					item.params = item.params.split(trigger)[1]
+					print item.params
+					func = getattr(FListCommands, '{}'.format(func), None)
+					if func: 
+						func(self, item)
+						EventQueue.popleft()
+						return
+				else: EventQueue.appendleft((person, trigger, func))
+			except IndexError: pass
+			except Exception: traceback.print_exc()
 		# END SUPER EXPERIMENTAL
 		if datapipe.personality != None: 
 			datapipe.personality.code.handle(self, item.cmd, item.params) 
@@ -1016,7 +1018,7 @@ def mainloop():
 			handle_all_the_things(self, item, item.cmd)
 		else:
 			parseText(self, item)
-	except Queue.Empty: pass
+	except IndexError: pass
 	
 if __name__ == '__main__':
 	load(datapipe)
@@ -1030,7 +1032,7 @@ if __name__ == '__main__':
 	try:
 		print('Starting reactor.')
 		EternalSender.start(0.500)
-		MainLoop.start(0.25)
+		MainLoop.start(0.100)
 		reactor.run()
 	except:
 		reactor.stop()
