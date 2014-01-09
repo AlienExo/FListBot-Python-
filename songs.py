@@ -11,19 +11,18 @@ class Song():
 		self.func 		= functions[song]
 		
 		
-functions = {'EXEC_HIBERNATION':"hibernation", 'METHOD_METAFALICA':"_method_metafalica", 'EXEC_LINKER':"_op"}
+functions = {'EXEC_HIBERNATION':"hibernation", 'METHOD_METAFALICA':"_method_metafalica", 'EXEC_LINKER':"_admin", 'EXEC_CHRONICLE=KEY':'hibernation'}
 		
 dict_songs =	{
 				'EXEC_HIBERNATION':["Was yea ra enne ar ciel", 
 									"Rrha num ra sleipir etealune na near na morto ciel"],
 									
-				'EXEC_CHRONICLE=KEY':[	"Was au ga whai pauwel gaunji yasra whou na cenjue sor tou zuieg", 
-										"Was ki ra, grandi en eterne slepir, presia aterra cremia sos viuy lonfa, yehar lamenza der soare mea"],
+				'EXEC_CHRONICLE=KEY':[	"Wee ki ra selena anw yasra wiene en chs CRONICLE=KEY sos yor/.", 
+										"Was ki ra, grandi en eterne slepir, presia aterra cremia sos viuy lonfa, yehar lamenza der soare mea/."],
 										
 				'EXEC_DESPEDIA':[	"Rrha yea ra haf yor, forgandal knawa Manac yor, Manac"],
-									
-									
-				'EXEC_LINKER':[	"Was yea ra frreie yor wart en chs manaf an yor synk sor al memora en knawa ar tonelico"],
+															
+				'EXEC_LINKER':[	"Rrha ki ra tek wim tes yor en weel waath dius manaf, Yat!", "Was yea ra frreie yor wart en chs manaf an yor/.", "Synk sor al memora en knawa Ar tonelico/."],
 								
 				'EXEC_NULLASCENSION':[	"Rrha apea gagis paul ini ar ciel", 
 										"Wee num ra, gran faja dius manafaln sheak, pat syec yeal."],
@@ -51,15 +50,7 @@ dict_songs =	{
 								"Mea nille yor",
 								"Kiafa hynne mea, sarla na layy, ar knawa yor",
 								"Vinan yor, noglle yor, presia messe noce yor tes mea"],
-				
-				'EXEC_VIENA':[	"Was yea erra chs sheak, en sol anw yeal.",
-								"Was quel erra chs lusye eazas.",
-								"Presia firle anw harton, van yor jyel der polon, yanje."],
-				
-				'EXEC_over.METHOD_SUBLIMATION':[],
-				
-				'METHOD_IMPLANTA':[],
-				
+												
 				'METHOD_METAFALICA':["Was paks ra faja juez/.", "Over the earth, for many years dry without rain, sounds of droplets fall, each fleeting, each precious..."],
 				
 				'METHOD_REPLEKIA':[	"xO herr mLYOrArA du sphaela, m.t.y.y. giz wOsLYI du giz/.", 

@@ -19,32 +19,7 @@ import time
 import traceback
 import utils
 
-"""
-import urllib 
-import urllib2
-import mp3play
-import pyttsx
-voice = pyttsx.init()
-
-def speakThroughGoogle(text):
-	text=str(text)
-	api="http://translate.google.com/translate_tts?{}"
-	headers = {"Host":"translate.google.com", "Referer":"http://www.gstatic.com/translate/sound_player2.swf", "User-Agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.163 Safari/535.19"}
-	ziel = "speech0.mp3"
-	with open(ziel, 'wb') as io:
-		for num, item in enumerate(text[i:i+100] for i in range(0, len(text), 100)):
-			url=api.format(urllib.urlencode({'tl':'en', 'q':item}))
-			req = urllib2.Request(url, '', headers)
-			io.write(urllib2.urlopen(req).read())
-	mp3 = mp3play.load(ziel)
-	mp3.play()
-	time.sleep(mp3.seconds()+0.5)
 	
-def speakThroughPython(text):
-	voice.say(text)
-	voice.runAndWait()
-"""
-		
 #units in relation
 def spokenRelativeSize(n, nn):
 	"""n - number, nn - max of it. Returns the string for the unit's relation to another, e.g. tiny, huge, enormous, microscopic."""
@@ -118,27 +93,29 @@ def spokenFraction(d):
 	power = log10(d)
 	cat = d//0.25
 	return random.choice(lines[cat])
-	
-#def spokenColor(hex="ffffff"):
+
+"""	
+def spokenColor(hex="ffffff"):
 	pass
 
-#def fuzzyColor(color=None, hex="ffffff"):
+def fuzzyColor(color=None, hex="ffffff"):
 	pass
 
-#def detectColor(color="white")
-	#compare to existing list
-	#otherwise regex existing list, list all matches, concoct... largest match? Mostly white? Adjectives?
+def detectColor(color="white")
+	compare to existing list
+	otherwise regex existing list, list all matches, concoct... largest match? Mostly white? Adjectives?
 
-#def describeCharacter(char):
-	#get missing data from FListAPI
-		#which should scrape profiles that don't let API access. ;)
-	#complete class instance. if the char's in the channel, add to self.users (otherwise we'll have all of FList downloaded soon. :V)
+def describeCharacter(char):
+	get missing data from FListAPI
+		which should scrape profiles that don't let API access. ;)
+	complete class instance. if the char's in the channel, add to self.users (otherwise we'll have all of FList downloaded soon. :V)
 
+def termOfAddress(char):
+	pass
+"""
 def timeOfDay():
 	return ["night", "morning", "afternoon", "evening"][datetime.datetime.now().hour//6]
 	
-def termOfAddress(char):
-	pass
 #---------------------------------------------------------------
 	
 class Personality():
