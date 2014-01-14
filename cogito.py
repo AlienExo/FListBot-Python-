@@ -60,8 +60,9 @@ class Channel():
 		char = getUser(character)
 		chan.users.append(char.name)
 		chan.lastjoined.append(char.name)
+		# if datapipe.personality != None: 
 		telling(char, chan)
-		# utils.log("Appended {} to {}'s last joined list. Current length: {}\n".format(name, chan.name, len(chan.lastjoined)), 0)
+		# else: datapipe.personality.code.telling(datapipe.FListProtocol, char, chan)
 				
 	def userLeft(chan, character):
 		name = getUser(character).name
@@ -162,7 +163,7 @@ datapipe = DataPipe()
 def sendRaw(msg):
 	sendQueue.append(msg)
 	
-def sendText(message, route=1, char='Cogito', chan='PM'):
+def sendText(message, route=1, char=config.character, chan='PM'):
 	"""	Route	0			1			2				3				4
 		Target	PM		Channel		Channel+Prefix	Action in MSG	Action in PRI"""
 	char=getUser(char).name
@@ -404,7 +405,18 @@ def checkAge(age, char, chan):
 
 	except: traceback.print_exc()
 
-class FListCommands():
+class FListProtocol(WebSocketClientProtocol):
+	def __init__(self):
+		datapipe.FListProtocol = self
+		
+	def onOpen(self):
+		datapipe.key = FListAPI.getKey()
+		reactor.callLater(0.75, sendRaw, "IDN {}".format(json.dumps({"method":"ticket","account":config.account,"character":"Cogito","ticket":datapipe.key,"cname":"cogito","cversion":config.version})))
+
+	def onMessage(self, msg, binary):
+		# msg = msg.decode('ascii', 'ignore')
+		message = Message(msg)
+		recvQueue.append((message, self))
 		
 	def reply(self, message, item, path_override=None):
 		reply(message, item, path_override)
@@ -668,7 +680,7 @@ class FListCommands():
 	def _method_metafalica(self, item):
 		reply("Was ki ga exec hymme METAFALICA reta tie manac dor.", item)
 		EventQueue.append((item.source.character.name, 'exec hymme METAFALICA ', 'method_metafalica'))
-#	
+	
 #	def kickban(self, character, channel=source.channel):
 #		kchannel = channelKey(channel)
 #		sendText("CKU {}".format(json.dumps({'channel': kchannel, 'character': character})), 5)
@@ -719,9 +731,9 @@ class FListCommands():
 			age = int(item.args[0])
 			item.source.channel.minage = age
 			if age == 0:
-				reply("Cogito Age Check deactivated by {} (level {} access).".format(item.source.character.name), item)
+				reply("Age Check deactivated by {} (level {} access).".format(item.source.character.name), item)
 				return
-			reply("Cogito Age Check activated by {}. Alerting administrators to characters below age {}.".format(item.source.character.name, personality.spokenNumber(age)), item)
+			reply("Age Check activated by {}. Alerting administrators to characters below age {}.".format(item.source.character.name, personality.spokenNumber(age)), item)
 			utils.log("{} set the minimum age for {} to {}.".format(item.source.character.name, item.source.channel.name, age), 3, item.source.channel.name)
 		except ValueError:
 			reply("Error: Cannot parse {} as a number.".format(item.args[0]), item, 0)
@@ -825,7 +837,7 @@ class FListCommands():
 			messages = []
 		except KeyError:
 			messages = []
-		if len(messages)>4:
+		if len(messages)>config.messagelimit:
 			reply("[color=green]{} already has {} messages waiting. Message not added.[/color]".format(recipient, personality.spokenNumber(config.messagelimit)), msg, 2)
 			return
 		else:	
@@ -843,21 +855,6 @@ class FListCommands():
 	def infodump(self, msg):
 		#debug command, print __attributes__ or other metadata. get object with __getattr__ and disassemble.
 		pass
-		
-class FListProtocol(WebSocketClientProtocol, FListCommands):
-	def __init__(self):
-		datapipe.FListProtocol = self
-		
-	def onOpen(self):
-		datapipe.key = FListAPI.getKey()
-		reactor.callLater(0.75, sendRaw, "IDN {}".format(json.dumps({"method":"ticket","account":config.account,"character":"Cogito","ticket":datapipe.key,"cname":"cogito","cversion":config.version})))
-		# sendRaw("IDN {}".format(json.dumps({"method":"ticket","account":config.account,"character":"Cogito","ticket":datapipe.key,"cname":"cogito","cversion":config.version})))
-		# sendRaw("ORS")
-
-	def onMessage(self, msg, binary):
-		# msg = msg.decode('ascii', 'ignore')
-		message = Message(msg)
-		recvQueue.append((message, self))
 		
 def parseText(self, msg):
 	if msg.params[:5]==".auth": utils.log("root-level login attempt by {}".format(msg.source.character.name), 0)
@@ -950,7 +947,7 @@ def handle_all_the_things(self, msgobj, cmd=None):
 			if callable(func):
 				func(datapipe, msgobj)
 		else:
-			func = getattr(FListCommands, '{}'.format(cmd), None)
+			func = getattr(FListProtocol, '{}'.format(cmd), None)
 			if callable(func):
 				func(self, msgobj)
 			else:
@@ -1000,26 +997,28 @@ def listen(msg, songinst):
 		finally:
 			datapipe.songs.remove(songinst)
 
-def telling(char, chan):
+def _telling(char):
+	#message: ('Sender', 'Message', timestamp)
 	messages=[]
 	try:
 		for x in datapipe.messageDict[char.name.lower()]:
-			messages.append(x) 
-		c = len(messages)
-		if c==0: return
-		sendText("[color=green]{}, you have {} new message{}:[/color]".format(char.name, personality.spokenNumber(c), 's'*(c>1)), 1, char, chan)
-		for x in messages:
 			d = utils.timeFrac(datetime.datetime.now()-x[2])
-			sendText("[color=yellow]<{}> [color=green]{}[/color] ({} ago)[/color]".format(x[0], x[1], d[0]), 2, char, chan)
-	
-	except KeyError: pass
-	
-	except TypeError:
-		traceback.print_exc()
+			# returns (formatted string w/ fractoin, (major number, numeric fraction, time unit))
+			messages.append((x[0], x[1], d))
+	except KeyError: return []
 	else:
 		del(datapipe.messageDict[char.name.lower()])
 		utils.saveData(datapipe.messageDict, '{} messages'.format(config.character))
-		
+		return messages			
+			
+def telling(char, chan):
+	messages = _telling(char)
+	c = len(messages)
+	if c==0: return
+	sendText("[color=green]{}, you have {} new message{}:[/color]".format(char.name, personality.spokenNumber(c), 's'*(c>1)), 1, char, chan)
+	for x in messages:
+		sendText("[color=yellow]<{}> [color=green]{}[/color] ({} ago)[/color]".format(x[0], x[1], x[2][0]), 2, char, chan)
+						
 def qsend():
 	try:
 		item = sendQueue.popleft()
@@ -1031,7 +1030,7 @@ def mainloop():
 		"""doesn't do anything if EventQueue empty. instead of eventQueue, threading and conditions?"""
 		item, self = recvQueue.popleft()
 		if datapipe.personality != None: 
-			datapipe.personality.code.handle(self, item.cmd, item.params) 
+			datapipe.personality.code.handle(self, item) 
 		if item.cmd not in ['MSG', 'PRI']:
 			handle_all_the_things(self, item, item.cmd)
 			return
@@ -1046,7 +1045,7 @@ if __name__ == '__main__':
 	factory.protocol = FListProtocol
 	EternalSender = task.LoopingCall(qsend)
 	MainLoop = task.LoopingCall(mainloop)
-	print('Booting cogito, version {}. Connecting to account "{}". Condition all green. Get set.'.format(config.version, config.account))
+	print('Booting Cogito, version {}. Connecting to account "{}". Condition all green. Get set.'.format(config.version, config.account))
 	connectWS(factory)
 	try:
 		print('Starting reactor.')

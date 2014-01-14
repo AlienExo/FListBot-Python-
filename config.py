@@ -23,6 +23,7 @@ version=	"1.5.3.7"
 
 banter = False
 banterchance = 1.0
+messagelimit = 5
 
 #Format: Command : (function_name, level required for access, message type required for access.)
 #levels: 

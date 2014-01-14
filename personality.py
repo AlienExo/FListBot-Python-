@@ -1,13 +1,8 @@
-#use getattr() to get "".format() the required arguments?
-
-# lines (dict)
-#	telling
-#		("line {} with inserts for your {} args", [args])
-#	<function>
-
-#[19:13 PM]Exo: And for the Ephebophile we have a nice, chilled cup of "get the fuck out of my channel"
-#	program this
-
+# Ritchie  
+	# you'd have some object of type MainProgram inside your Personality class
+	# and you then call methods on this object
+	# the pattern is "if this class can't/shouldn't do a thing, delegate it to a class that can/should"
+	
 import bisect
 import datetime
 import math
@@ -19,7 +14,6 @@ import time
 import traceback
 import utils
 
-	
 #units in relation
 def spokenRelativeSize(n, nn):
 	"""n - number, nn - max of it. Returns the string for the unit's relation to another, e.g. tiny, huge, enormous, microscopic."""
