@@ -9,7 +9,7 @@ import re
 import traceback
 
 opener = urllib2.build_opener()
-opener.addheaders.append(('Cookie', 'warning=1'))
+opener.addheaders([('Cookie', 'warning=1'), ('Cookie', 'subscribed=1')])
 loginAPI =	"http://www.f-list.net/json/getApiTicket.php"
 #Returns JSON with: 
 	#datetime_changed, pageviews, name, created, BIG FAT DESCRIPTION.

@@ -16,7 +16,7 @@ import re
 import songs
 import string
 import sys
-import threading
+# import threading
 import time
 import traceback
 from urllib import urlencode, quote_plus
@@ -33,7 +33,6 @@ startuptime 	= datetime.datetime.now()
 sendQueue		= deque()
 recvQueue 		= deque()
 EventQueue 		= deque()
-
 
 admins 			= utils.loadData('admins', list)
 chanAdmins		= []
@@ -69,6 +68,7 @@ class Channel():
 		try:
 			chan.users.remove(name)
 			chan.lastjoined.remove(name)
+			datapipe.lastseenDict[name]=datetime.datetime.now()
 		except ValueError: pass
 		except:
 			traceback.print_exc()
@@ -77,11 +77,10 @@ class Channel():
 		sendRaw("JCH {}".format(json.dumps({'channel':self.key})))
 		for pos, item in enumerate(datapipe.channels):
 			if item==None:
-				print pos, item, datapipe.channels
 				datapipe.channels[pos]=self
-				print pos, item, datapipe.channels
 				# self.index = len(datapipe.channels)-1	
 				self.index = pos	
+				print("Joining channel '{}', index {}.".format(self.name, self.index))
 				return
 		datapipe.channels.append(self)
 		self.index = len(datapipe.channels)-1
@@ -91,21 +90,6 @@ class Channel():
 		sendRaw("LCH {}".format(json.dumps({'channel':self.key})))
 		datapipe.channels[self.index]=None
 		self.index=None
-		
-def userFromFListData(name, data):
-	print("User data acquired.")
-	user = getUser(name)
-	try:
-		for x in data:
-			print("Setting ", user.name, " ", str(x), " to ", data[x])
-			setattr(user, str(x).lower(), data[x])
-	except Exception, exc:
-		print exc
-	try:
-		user.age = int(re.search('(\d{1,5})', data['Age']).group(0))
-		user.weight = int(re.search('(\d{1,5})', data['Weight']).group(0))
-	except KeyError as error: 
-		setattr(user, "".format(error).lower(), 0)
 		
 class User():
 	def __init__(self, name):
@@ -141,9 +125,40 @@ class User():
 	def addStrike(self, channel):
 		strikes = self.strikes[channel.name]
 		strikes+=1
-			
-				
-	
+
+class DataPipe():
+	def __init__(self):
+		self.character		= config.character
+		self.helpDict 		= utils.loadData('help', dict)
+		self.messageDict 	= utils.loadData('{} messages'.format(config.character), dict)
+		self.functions		= config.functions
+		self.channels		= [Channel('Dummy')]
+		self.channelDict	= utils.loadData('channels', dict)
+		self.songs 			= []
+		self.pluginexit		= []
+		self.pluginloops	= []
+		self.dict_limits 	= {}
+		self.plugins 		= {}
+		self.usersDict 		= {}
+		self.lastseenDict 	= utils.loadData('lastseen', dict)
+		self.personality	= None
+		self.Aurica			= ""
+		self.Despedia		= False
+		
+	def loadData(self, file, expected=dict):
+		return utils.loadData(file, expected=dict)
+		
+	def saveData(self, data, file):
+		utils.saveData(data, file)
+
+	def reply(self, message, item, path_override=None):
+		reply(message, item, path_override)
+		
+	def writeLog(self, text):
+		utils.log(text, 1)
+
+datapipe = DataPipe()
+
 def sendRaw(msg):
 	sendQueue.append(msg)
 	
@@ -183,43 +198,25 @@ def saveChannelSettings():
 			newinst.users = []
 			newinst.lastjoined = []
 			newinst.index = []
-			#newinst.key = ""
 			chans[name]=newinst
 	utils.saveData(chans, 'channels')
 	for x in chans: del x
 	del chans
 
-class DataPipe():
-	def __init__(self):
-		self.character		= config.character
-		self.helpDict 		= utils.loadData('help', dict)
-		self.messageDict 	= utils.loadData('{} messages'.format(config.character), dict)
-		self.functions		= config.functions
-		self.channels		= [Channel('Dummy')]
-		self.channelDict	= utils.loadData('channels', dict)
-		self.songs 			= []
-		self.pluginexit		= []
-		self.pluginloops	= []
-		self.dict_limits 	= {}
-		self.plugins 		= {}
-		self.usersDict 		= {}
-		self.lastseenDict 	= utils.loadData('lastseen', dict)
-		self.personality	= None
-		self.Aurica			= ""
-		
-	def loadData(self, file, expected=dict):
-		return utils.loadData(file, expected=dict)
-		
-	def saveData(self, data, file):
-		utils.saveData(data, file)
-
-	def reply(self, message, item, path_override=None):
-		reply(message, item, path_override)
-		
-	def writeLog(self, text):
-		utils.log(text, 1)
-		
-datapipe = DataPipe()
+def userFromFListData(name, data):
+	user = getUser(name)
+	print("User data for {} acquired. Updating User instance at {}.".format(name, user))
+	try:
+		for x in data:
+			print("Setting ", user.name, " ", str(x), " to ", data[x])
+			setattr(user, str(x).lower(), data[x])
+	except Exception, exc:
+		print exc
+	try:
+		user.age = int(re.search('(\d{1,5})', data['Age']).group(0))
+		user.weight = int(re.search('(\d{1,5})', data['Weight']).group(0))
+	except KeyError as error: 
+		setattr(user, "".format(error).lower(), 0)
 
 def getUser(user):
 	if isinstance(user, User): return user
@@ -250,7 +247,6 @@ def getChannel(channel):
 datapipe.getUser = getUser
 datapipe.getChannel = getChannel
 	
-#"It's easier to ask forgiveness than permission"
 class Source():
 	def __init__(self, channel, character):
 		if channel == "": 
@@ -408,10 +404,7 @@ def checkAge(age, char, chan):
 
 	except: traceback.print_exc()
 
-class FListCommands(threading.Thread):
-
-	def __init__(self):
-		threading.Thread.__init__()
+class FListCommands():
 		
 	def reply(self, message, item, path_override=None):
 		reply(message, item, path_override)
@@ -434,7 +427,7 @@ class FListCommands(threading.Thread):
 		utils.log("{} was banned from {} by {}".format(item.args['character'], chan, item.args['operator']), 3, chan)
 		
 	def CCR(self, item):
-		print ("\nCCR RESPONSE")
+		print ("\t\tCCR RESPONSE")
 		print item.args, item.params
 		
 	def CDS(self, item):pass
@@ -532,7 +525,6 @@ class FListCommands(threading.Thread):
 		char = getUser(item.args['character'])
 		utils.log("User {} has left '{}'.".format(char.name, chan.name), 3, chan.name)
 		chan.userLeft(char)
-		datapipe.lastseenDict[char.name]=datetime.datetime.now()
 					
 	def LIS(self, item):pass
 	def LRP(self, item):pass
@@ -563,11 +555,13 @@ class FListCommands(threading.Thread):
 	def VAR(self, item):
 		server_vars[item.args["variable"]]=item.args["value"]
 		if item.args["variable"]=="msg_flood":
-			new = item.args["value"]*1.25
+			new = item.args["value"]*1.5
 			print("\tDetected server-side flood control. Self-adjusting: sending output every {} milliseconds.".format(new*1000))
 			server_vars['permissions']=1
 			EternalSender.stop()
 			EternalSender.start(new)
+			
+#===========================================
 
 	def listIndices(self, item):
 		reply("List of active channels and their indices for channel-specific commands:", item, 0)
@@ -585,23 +579,23 @@ class FListCommands(threading.Thread):
 		saveChannelSettings()
 		#utils.saveData(datapipe.whitelist, 'whitelist')
 
-	def blacklist(self, item):
-		candidate = item.params
+	# def blacklist(self, item):
+		# candidate = item.params
 		# datapipe.blacklist.append(candidate)
-		item.source.channel.blacklist.append(candidate)
-		reply("{} has been blacklisted for {}.".format(candidate, item.source.channel.name), item)
-		utils.log("{} has been blacklisted for {} by {} (level {} access).".format(candidate, item.source.channel.name, item.source.character.name, item.cf_level), 1)
-		saveChannelSettings()
+		# item.source.channel.blacklist.append(candidate)
+		# reply("{} has been blacklisted for {}.".format(candidate, item.source.channel.name), item)
+		# utils.log("{} has been blacklisted for {} by {} (level {} access).".format(candidate, item.source.channel.name, item.source.character.name, item.cf_level), 1)
+		# saveChannelSettings()
 		
 	def auth(self, item):
 		if md5(item.params).hexdigest() == config.masterkey:
-			reply("Was ki ra hyma yor, futare ANSUL_ARTONELICO", item, 0)
+			reply("Was ki ra hyma yor, futare ANSUL_{}".format(config.character.upper()), item, 0)
 			datapipe.Aurica = item.source.character.name
 		
 	def _admin(self, item):
 		if datapipe.Aurica:
 			config.admins.append(datapipe.Aurica)
-			reply("Was yea ra chmod b111111111/n => zuieg {}_ANSUL_ARTONELICO".format(item.source.character.name.upper()), item)
+			reply("Was yea ra chmod b111111111/n => zuieg {}_ANSUL_{}".format(item.source.character.name.upper(), config.character.upper()), item)
 			datapipe.Aurica = ""
 		else:
 			reply("", item)
@@ -624,8 +618,7 @@ class FListCommands(threading.Thread):
 			utils.log("{} has is no longer a bot operator for {} by order of {} (level {} access).".format(candidate, item.source.channel.name, item.source.character.name, item.cf_level), 1)
 		except IndexError:
 			reply("[color=red][b]Error:[/b][/color] {} was not found in the bot operator registry for {}. Please check spelling and capitalization.".format(candidate, item.source.channel.name), item)
-			
-		
+				
 	def join(self, item):
 		chan = getChannel(item.params)
 		reply("Command received. Attempting to join '{}'".format(chan.name), item, 0)
@@ -642,23 +635,38 @@ class FListCommands(threading.Thread):
 		char = item.params
 		sendRaw("CKU {}".format(json.dumps({'channel': item.source.channel.key, 'character': char})))
 		reply("Command received. Removing '{}' from {}.".format(character, source.channel), item, 0)
-		utils.log("{} (level {} access) has kicked {} from {}.".format(item.source.character.name, item.cf_level, char, item.source.channel.name), 3, chan.name)
+		utils.log("{} (level {} access) has kicked user {} from {}.".format(item.source.character.name, item.cf_level, char, item.source.channel.name), 3, chan.name)
 	
 	def ban(self, item):
 		char = item.params	
-		sendRaw("CKU {}".format(json.dumps({'channel': item.source.channel.key, 'character': char})))
+		sendRaw("CBU {}".format(json.dumps({'channel': item.source.channel.key, 'character': char})))
 		reply("Command received. Banning '{}' from {}.".format(character, source.channel), item, 0)
-		item.source.channel.blacklist.append(char)
+		#item.source.channel.blacklist.append(char)
 		utils.log("{} (level {} access) has banned {} from {}.".format(item.source.character.name, item.cf_level, char, item.source.channel.name), 3, chan.name)
 		
+	def unban(self, item):
+		char = item.params
+		sendRaw("CBU {}".format(json.dumps({'channel': item.source.channel.key, 'character': char})))
+		utils.log("{} was unbanned from {} by {} (level {} access)".format(item.params, item.source.channel.name, item.source.character.name, item.cf_level), 1, item.source.channel.name)
+		
+		#try:
+			#item.source.channel.blacklist.remove(item.params)
+		#except IndexError:
+			#reply("Character '{}' not in Blacklist for {}. Please check channel, check spelling, and retry.".format(item.params, item.source.channel.name), item)
+		#else:
+			#reply("Character '{}' removed from blacklist for {}.".format(item.params, item.source.channel.name), item)
+			#utils.log("{} removed from blacklist for {} by {} (level {} access)".format(item.params, item.source.channel.name, item.source.character.name, item.cf_level), 1, item.source.channel.name)
+			
+	def exec_purger(self, item):
+		reply("Rrha yea ra EXEC_PURGER >> {}_ANSUL_{}".format(item.source.character.name.upper(), config.character.upper()), item)
+		EventQueue.append((item.source.character.name, 'Was ki ra exec syec parge ', 'kick'))
+		
 	def method_metafalica(self, item):
-		print item.params
 		newchannel=item.params
 		sendRaw("CCR {}".format(json.dumps({'channel':newchannel})))
 	
-	
 	def _method_metafalica(self, item):
-		reply("Was ki ga exec hymme METAFALICA reta tie manac dor." , item)
+		reply("Was ki ga exec hymme METAFALICA reta tie manac dor.", item)
 		EventQueue.append((item.source.character.name, 'exec hymme METAFALICA ', 'method_metafalica'))
 #	
 #	def kickban(self, character, channel=source.channel):
@@ -696,16 +704,6 @@ class FListCommands(threading.Thread):
 		reply("The following {} users (out of a maximum {}) recently joined '{}': {}".format(numUsers, len(channel.lastjoined), channel.name, " ".join(users)), item, 0)
 		channel.lastjoined=channel.lastjoined[numUsers:]
 			
-	def unban(self, item):
-		try:
-			item.source.channel.blacklist.remove(item.params)
-		except IndexError:
-			reply("Character '{}' not in Blacklist for {}. Please check channel, check spelling, and retry.".format(item.params, item.source.channel.name), item)
-		else:
-			reply("Character '{}' removed from blacklist for {}.".format(item.params, item.source.channel.name), item)
-			utils.log("{} removed from blacklist for {} by {} (level {} access)".format(item.params, item.source.channel.name, item.source.character.name, item.cf_level), 1, item.source.channel.name)
-			
-	
 	def ignore(self, item):
 		if not item.source.character.name in item.source.chan.ignoreops:
 			item.source.chan.ignoreops.append(item.source.character.name)
@@ -716,7 +714,6 @@ class FListCommands(threading.Thread):
 			reply("You have been removed from the ignore list for {}.".format(item.source.channel.name), item)
 			utils.log("{} opted to no longer be ignored in {}".format(item.source.character.name, item.source.channel.name), 1)
 			
-	
 	def minage(self, item):
 		try:
 			age = int(item.args[0])
@@ -731,10 +728,11 @@ class FListCommands(threading.Thread):
 		else:
 			saveChannelSettings()
 			
-	def alertUnderage(self, item):
+	def alertUnderAge(self, item):
+		print("In func")
 		try:
 			item.source.channel.alertUnderage = not item.source.channel.alertUnderage
-			reply("Alert function for underage characters set to '{}'. Moderators will{} be alerted to underage characters.".format(['Off', 'On'][item.source.channel.alertUnderage*1], ' not'*(not item.source.channel.alertUnderage)), item)
+			reply("Alerts for underage characters are {}. Moderators will{} be alerted to underage characters.".format(['off', 'on'][item.source.channel.alertUnderage*1], ' not'*(not item.source.channel.alertUnderage)), item)
 			utils.log("{} set the underage alert for {} to '{}'.".format(item.source.character.name, item.source.channel.name, item.source.channel.alertUnderage), 3, item.source.channel.name)
 		except:
 			traceback.print_exc()
@@ -742,14 +740,10 @@ class FListCommands(threading.Thread):
 			saveChannelSettings()
 			
 	def alertNoAge(self, item):
-		try:
-			item.source.channel.alertNoAge = not item.source.channel.alertNoAge
-			reply("Alert function for unparseable characters set to '{}'. Moderators will{} be alerted to unparseable characters.".format(['Off', 'On'][item.source.channel.alertNoAge*1], ' not'*(not item.source.channel.alertNoAge)), item)
-			utils.log("{} set the mod alert for {} to '{}'.".format(item.source.character.name, item.source.channel.name, item.source.channel.alertNoAge), 3, item.source.channel.name)
-		except:
-			traceback.print_exc()
-		else:
-			saveChannelSettings()
+		item.source.channel.alertNoAge = not item.source.channel.alertNoAge
+		reply("Alerts for characters with no age listed are {}. Moderators will{} be alerted to such characters.".format(['off', 'on'][item.source.channel.alertNoAge*1], ' not'*(not item.source.channel.alertNoAge)), item)
+		utils.log("{} set the mod alert for {} to '{}'.".format(item.source.character.name, item.source.channel.name, item.source.channel.alertNoAge), 3, item.source.channel.name)
+		saveChannelSettings()
 		
 	def rainbowText(self, item):
 		slist=[]
@@ -767,9 +761,13 @@ class FListCommands(threading.Thread):
 		print len(slist), slist
 		sendText("[color=red]{}[/color][color=orange]{}[/color][color=yellow]{}[/color][color=green]{}[/color][color=cyan]{}[/color][color=blue]{}[/color][color=purple]{}[/color]".format(*slist), 2, chan=item.source.channel)
 		
+	def lockdown(self, item):
+		datapipe.Despedia = not datapipe.Despedia
+		utils.log("Lockdown engaged by {} (level {} access). None but hardcoded administrators may issue commands until lifted.".format(item.source.character.name, item.cf_level), 1)
+		
 	def hibernation(self, item):
 		try:
-			reply("Command accepted. Shutting down.", item)
+			reply("Command accepted. Shutting down.", item, 2)
 			utils.log('Shutting down by order of {} (level {} access). Stopping reactor and writing data.'.format(item.source.character.name, item.cf_level), 1)
 			reactor.stop()
 			chans = {}
@@ -842,6 +840,10 @@ class FListCommands(threading.Thread):
 	def act(self, msg):
 		sendText(msg.params, 3, chan=msg.source.channel)
 		
+	def infodump(self, msg):
+		#debug command, print __attributes__ or other metadata. get object with __getattr__ and disassemble.
+		pass
+		
 class FListProtocol(WebSocketClientProtocol, FListCommands):
 	def __init__(self):
 		datapipe.FListProtocol = self
@@ -857,7 +859,6 @@ class FListProtocol(WebSocketClientProtocol, FListCommands):
 		message = Message(msg)
 		recvQueue.append((message, self))
 		
-"""sendRaw and sendText both expect Message() instances, which have self.params (a dict for sendRaw, a string for sendText, similar to received messages), self.source (carried over from the incoming message object?) and that's about it?"""	
 def parseText(self, msg):
 	if msg.params[:5]==".auth": utils.log("root-level login attempt by {}".format(msg.source.character.name), 0)
 	elif not msg.params[:3]=="/me":utils.log("{}: \"{}\"".format(msg.source.character.name, msg.params), 3, msg.source.channel.name)
@@ -878,6 +879,7 @@ def parseText(self, msg):
 		except IndexError: pass
 		# END SUPER EXPERIMENTAL
 	try:
+		if datapipe.Despedia and msg.source.character.name not in config.admins: return
 		if msg.args[0] in datapipe.functions.keys():
 			func = msg.args[0]
 			msg.args = msg.args[1:]
@@ -952,7 +954,7 @@ def handle_all_the_things(self, msgobj, cmd=None):
 			if callable(func):
 				func(self, msgobj)
 			else:
-				print("{} -- Unregistered command '{}'; {}".format(time.strftime("%c"), msgobj.cmd, msgobj.args))
+				utils.log("Cannot execute unregistered command '{}'. Check entry in config.functions/other sources and note proper capitalization.".format(msgobj.cmd, msgobj.args), 2)
 				raise AttributeError
 				
 	except AttributeError, error:
@@ -997,9 +999,7 @@ def listen(msg, songinst):
 			handle_all_the_things(datapipe.FListProtocol, msg, songinst.func)
 		finally:
 			datapipe.songs.remove(songinst)
-			
-			
-		
+
 def telling(char, chan):
 	messages=[]
 	try:

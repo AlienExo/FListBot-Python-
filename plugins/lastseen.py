@@ -14,9 +14,7 @@ def lastseen(self, msgobj, mode=0, mrec=0):
 	try:
 		user = msgobj.source.character.name
 		if msgobj.params in msgobj.source.channel.users:
-			action = random.choice(actions)
-			thing = random.choice(things)
-			reply="{} \"{} {}\"".format(action, msgobj.params, random.choice(things))
+			reply="{} \"{} {}\"".format(random.choice(actions), msgobj.params, random.choice(things))
 			if msgobj.params==user:
 				self.reply("You are right in front of me.", msgobj)
 				return
@@ -35,15 +33,7 @@ def lastseen(self, msgobj, mode=0, mrec=0):
 				self.reply("{!s} was last seen on {}; {} ago.".format(msgobj.params, date.strftime("%A, %d.%m.%Y %H:%M"), utils.timeCalc(delta)[0]), msgobj)
 				
 			except:
-				traceback.print_exc()
-				raise KeyError
-					
-			else:
-				return
-			
-	except KeyError:
-		self.reply("Unable to comply: No entry for subject '{!s}' found. Please make sure the name is properly spelled and capitalized.".format(msgobj.params), msgobj, 0)
-		
+				self.reply("Unable to comply: No entry for subject '{!s}' found. Entry may not exist, or subject name may not be properly spelled and/or capitalized.".format(msgobj.params), msgobj, 0)
 	except:
 		traceback.print_exc()
 

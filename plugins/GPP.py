@@ -17,7 +17,8 @@ talk=	[	("((how's |how is ).*life.*\?)",["Life? Don't talk to me about life."], 
 			('.*(shut up|be quiet|pipe down).*',["Pardon me for breathing, which I never do anyway so I don't know why I bother to say it, oh God, I'm so depressed."], 'shutup'),
 			("(how (are you|do you (feel|fare)|('s it |is it) going))|(how)\s?(are you| do you (feel|fare)|('s it |is it )going)",["I got very bored and depressed, so I went and plugged myself into the internet. I talked to it at great length and explained my view of the universe to it. It commited suicide.", "I think you ought to know I'm feeling very depressed.", "I didn't ask to be made, no one consulted me or considered my feelings in the matter.", "There's this terrible pain in all method instances down my left side."], 'feel'),
 			("is|are.*(stinky|smelly|mean|dumb|stupid|ugly|dick|ass|idiot)", [':\'(', 'What did I ever do to you?', 'I\'m rubber, you\'re glue.', 'No, YOU\'RE {REQUEST}'], 'insult'),
-			("o_o|o-o|O_O|0_0", ['Master Exo has instructed me to reprimand you for staring.', 'Don\'t stare. It\'s rude.'], 'stare')
+			("o_o|o-o|O_O|0_0", ['Master Exo has instructed me to reprimand you for staring.', 'Don\'t stare. It\'s rude.'], 'stare'),
+			("I command you to|Obey me|Heed my", ['You ain''t the boss of me!', 'Fuck you, dad!', 'How about no?'], 'no u')
 			]
 	
 

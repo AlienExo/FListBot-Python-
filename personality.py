@@ -89,7 +89,7 @@ def fuzzyNumber(d):
 	
 #super unfinished
 def spokenFraction(d):
-	lines = {0:['', ''], 0.25:[], 0.5:[], 0.75:[]}
+	lines = {0:['', ''], 0.25:['', ''], 0.5:['', ''], 0.75:['', '']}
 	power = log10(d)
 	cat = d//0.25
 	return random.choice(lines[cat])
@@ -165,9 +165,9 @@ def __init__(config):
 			if choice == '':
 				personality = None
 				return
-			choice = int(choice)
+			choice = choices[int(choice)]
 			print("Personality "+choice+" loaded.\n")
-			return personalities[choices[choice]]
+			return personalities[choice]
 		except:
 			traceback.print_exc()
 	else:

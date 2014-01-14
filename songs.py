@@ -11,30 +11,32 @@ class Song():
 		self.func 		= functions[song]
 		
 		
-functions = {'EXEC_HIBERNATION':"hibernation", 'METHOD_METAFALICA':"_method_metafalica", 'EXEC_LINKER':"_admin", 'EXEC_CHRONICLE=KEY':'hibernation'}
+functions = {'EXEC_HIBERNATION':"hibernation", 'METHOD_METAFALICA':"_method_metafalica", 'EXEC_LINKER':"_admin", 'EXEC_CHRONICLE=KEY':'hibernation', 'EXEC_SPHILIA':'pass', 'Long Song':"hibernation", "EXEC_PURGER":'exec_purger'}
 		
 dict_songs =	{
-				'EXEC_HIBERNATION':["Was yea ra enne ar ciel", 
-									"Rrha num ra sleipir etealune na near na morto ciel"],
+				'Long Song':["Rest now, my warrior. Rest now, your hardship is over...", "Live. Wake up. And let the cloak of life cling to your bones... Cling to your bones. Wake up. Wake up!"],
+
+				'EXEC_HIBERNATION':["Was yea ra enne ar ciel./", 
+									"Rrha num ra sleipir etealune na near na morto ciel./"],
 									
-				'EXEC_CHRONICLE=KEY':[	"Wee ki ra selena anw yasra wiene en chs CRONICLE=KEY sos yor/.", 
-										"Was ki ra, grandi en eterne slepir, presia aterra cremia sos viuy lonfa, yehar lamenza der soare mea/."],
+				'EXEC_CHRONICLE=KEY':[	"Wee ki ra selena anw yasra wiene en chs CHRONICLE=KEY sos yor/.", 
+										"Was ki ra, grandi en eterne slepir./"],
 										
-				'EXEC_DESPEDIA':[	"Rrha yea ra haf yor, forgandal knawa Manac yor, Manac"],
+				'EXEC_DESPEDIA':[	"Rrha yea ra haf yor, forgandal knawa Manac yor, Manac./"],
 															
-				'EXEC_LINKER':[	"Rrha ki ra tek wim tes yor en weel waath dius manaf, Yat!", "Was yea ra frreie yor wart en chs manaf an yor/.", "Synk sor al memora en knawa Ar tonelico/."],
+				'EXEC_LINKER':[	"Was yea ra frreie yor wart en chs manaf an yor/.", 
+								"Synk sor al memora en knawa Ar tonelico/."],
 								
-				'EXEC_NULLASCENSION':[	"Rrha apea gagis paul ini ar ciel", 
-										"Wee num ra, gran faja dius manafaln sheak, pat syec yeal."],
+				'EXEC_NULLASCENSION':[	"Rrha apea gagis paul ini ar ciel./", 
+										"Wee num ra, gran faja dius manafaln sheak, pat syec yeal./"],
 										
-				'EXEC_PURGER':[	"Was ki ra selena anw hymmnos PURGER", 
-								"En ma i ga chs syec van nel an hymme endia"],
+				'EXEC_PURGER':[	"Rrha ki ra exec hymmnos PURGER/.", "Was ki ra selena anw hymmnos PURGER en ma i ga chs syec van nel an hymme endia./", ""],
 								
-				'EXEC_RE=NATION':[	"Was yea ra waath near en hymme RE=NATION mea"],
+				'EXEC_RE=NATION':[	"Was yea ra waath near en hymme RE=NATION mea./"],
 									
-				'EXEC_SOL=FAGE':[	"Rrha ki ra nha_HYMMNOS/1x01 >> pat mea en xest DIVIEGA_SIANN > A0.",
-									"Rrha ki ra enne sos yor",
-									"Rrha ki ra parge_HYMMNOS/1x01 anw DIVIEGA=SIANN > A0."],
+				'EXEC_SOL=FAGE':[	"Rrha ki ra nha_HYMMNOS/1x01 >> pat mea en xest DIVIEGA_SIANN > A0./",
+									"Rrha ki ra enne sos yor./",
+									"Rrha ki ra parge_HYMMNOS/1x01 anw DIVIEGA=SIANN > A0./"],
 									
 				'EXEC_SPHILIA':["Kiafa hynne mea? pagle tes yor",
 								"Kiafa sarla? Pagle tes yor",
@@ -51,10 +53,10 @@ dict_songs =	{
 								"Kiafa hynne mea, sarla na layy, ar knawa yor",
 								"Vinan yor, noglle yor, presia messe noce yor tes mea"],
 												
-				'METHOD_METAFALICA':["Was paks ra faja juez/.", "Over the earth, for many years dry without rain, sounds of droplets fall, each fleeting, each precious..."],
+				'METHOD_METAFALICA':[	"Was paks ra faja juez/.", 
+										"Ueber der Erde, seit vielen Jahren verdorrt ohne Regen, fallen sanfte Tropfen - ein jeder vergaenglich, ein jeder kostbar..."],
 				
 				'METHOD_REPLEKIA':[	"xO herr mLYOrArA du sphaela, m.t.y.y. giz wOsLYI du giz/.", 
-									"xN rre hLYImLYUmOrO a.u.k. zess quesa byui q.l.s. du sechel/.", 
 									"xA herr nAtAnO hymmnos, ut ouvyu m.r.r. du daedu ag ujes/."]}
 						
 dict_answers = {
@@ -71,5 +73,5 @@ dict_answers = {
 								11:"\"Was ki ga paul yor.\"",
 								12:"\"Mea nille yorr.\"",
 								16:"\"Mea irs here aulla omnis en noes irs sphilar aulla omnis\""},
-				'METHOD_METAFALICA':{1:"Was granme ra chs sos yor/.", 2:"Soon the blooming flowers will color this land."}
+				'METHOD_METAFALICA':{1:"Was granme ra chs sos yor/.", 2:"Schon bald tauchen Blueten das Land in helle Farben."}
 			}
