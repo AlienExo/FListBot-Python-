@@ -55,6 +55,7 @@ class Channel():
 		self.whitelist = []
 		self.blacklist = []
 		self.ignoreops = []
+		self.isPublic = True
 		
 	def userJoined(chan, character):
 		char = getUser(character)
@@ -91,6 +92,11 @@ class Channel():
 		sendRaw("LCH {}".format(json.dumps({'channel':self.key})))
 		datapipe.channels[self.index]=None
 		self.index=None
+	
+	def toggleLock(self):
+		self.status = not self.status
+		sendRaw("RST {}".format(json.dumps({'channel':self.key, 'status': ['private', 'public'][self.status]})))
+		reply("Channel '{}' set to '{}'.".format(self.name, ['private', 'public'][self.status]))
 		
 class User():
 	def __init__(self, name):
@@ -100,7 +106,7 @@ class User():
 		self.channels=[]
 		self.kinks=()
 		# datapipe.lastseenDict[self.name]=datetime.datetime.now()
-
+		
 	def __getattribute__(self, item):
 		try:
 			return object.__getattribute__(self, item)
@@ -201,7 +207,6 @@ def saveChannelSettings():
 			newinst.index = []
 			chans[name]=newinst
 	utils.saveData(chans, 'channels')
-	for x in chans: del x
 	del chans
 
 def userFromFListData(name, data):
@@ -263,6 +268,7 @@ class Message():
 		char = ""
 		chan = ""
 		self.access_type = 0
+		self.cf_level = 3
 		try:
 			self.cmd = msg[:3]
 			if len(msg)<4:
@@ -359,7 +365,7 @@ def checkAge(age, char, chan):
 	chan=getChannel(chan)
 	char.age = age
 	if char.age>=chan.minage:
-		utils.log("User {} has passed inspection for {} (Age>{}), claiming to be {} years old.".format(char.name, chan.name, chan.minage, char.age))
+		utils.log("User {} has passed inspection for {} (Age>={}), claiming to be {} years old.".format(char.name, chan.name, chan.minage, char.age))
 		chan.userJoined(char.name)
 		return
 		
@@ -368,13 +374,9 @@ def checkAge(age, char, chan):
 		chan.userJoined(char.name)
 		return
 		
-	xadmins = sorted(chan.ops, key=lambda *args: random.random())
-	for x in xadmins:
-		if x in chan.users:
-			if x in chan.ignoreops: continue
-			y = getUser(x)
-			if y.status in ['busy', 'dnd']: continue
-			else: break
+	xadmins = sorted(map(getUser, chan.ops), key=lambda *args: random.random())
+	xadmins = filter(lambda x: x.status in ['online', 'looking'], xadmins)
+	y = xadmins[0]
 	try:
 		assert y
 		if char.age<chan.minage and char.age!=0:
@@ -401,6 +403,8 @@ def checkAge(age, char, chan):
 		
 	except UnboundLocalError:
 		utils.log("Cannot fetch a mod, none logged in or set to online. Cannot verify user {} for {}.".format(char.name, chan.name), 3, chan.name)
+		for op in chan.ops:
+			print("Op: {} Status: {}".format(op.name, op.status))
 		return
 
 	except: traceback.print_exc()
@@ -503,11 +507,9 @@ class FListProtocol(WebSocketClientProtocol):
 	def ICH(self, item):
 		chan = getChannel(item.args['channel'])
 		if chan.index==None: return
-		chan.users=[]
-		chars = item.args['users']
+		chars = map(getUser, item.args['users'])
 		for x in chars:
-			x=getUser(x)
-			if not x.name in chan.users: chan.users.append(x.name)
+			if (not x.name in chan.users): chan.users.append(x.name)
 			datapipe.lastseenDict[x.name]=datetime.datetime.now()
 
 	def IDN(self, item): pass
@@ -546,8 +548,7 @@ class FListProtocol(WebSocketClientProtocol):
 		try:
 			data = item.args['channels']
 			ORSParse(data)
-			for x in config.channels:
-				getChannel(x).join()
+			for x in config.channels: getChannel(x).join()
 		except Exception:
 			utils.log(traceback.format_exc(), 2)
 		
@@ -741,7 +742,6 @@ class FListProtocol(WebSocketClientProtocol):
 			saveChannelSettings()
 			
 	def alertUnderAge(self, item):
-		print("In func")
 		try:
 			item.source.channel.alertUnderage = not item.source.channel.alertUnderage
 			reply("Alerts for underage characters are {}. Moderators will{} be alerted to underage characters.".format(['off', 'on'][item.source.channel.alertUnderage*1], ' not'*(not item.source.channel.alertUnderage)), item)
@@ -757,25 +757,27 @@ class FListProtocol(WebSocketClientProtocol):
 		utils.log("{} set the mod alert for {} to '{}'.".format(item.source.character.name, item.source.channel.name, item.source.channel.alertNoAge), 3, item.source.channel.name)
 		saveChannelSettings()
 		
+	def bingo(self, item):
+		reply("[url=http://i.imgur.com/fUHxLPQ.png]Collect your FList Bingo Card here.[/url]", item)
+		
 	def rainbowText(self, item):
 		slist=[]
 		a = len(item.params)
-		if a<7:
-			reply("Gonna need at least seven letters for a rainbow!", item)
-			return
-		d,e = divmod(a, 6)
-		if e == 0: d,e = divmod(a, 7)
-		for x in xrange(0, a, d):
-			slist.append(item.params[x:x+d])
-		if e>0:
-			slist.append(item.params[-e:])
-		else: slist.append('')
-		print len(slist), slist
+		b,c = divmod(a, 6)
+		print a, b, c
+		for x in xrange(0, a, b):
+			slist.append(item.params[x:x+b])
+		if c == 0: slist.append('')
+		else: slist.append(item.params[a-c:])
+		#if len(slist)==8:
+		#	slist[6]="".join(slist[6:])
+		#	slist=slist[:7]
 		sendText("[color=red]{}[/color][color=orange]{}[/color][color=yellow]{}[/color][color=green]{}[/color][color=cyan]{}[/color][color=blue]{}[/color][color=purple]{}[/color]".format(*slist), 2, chan=item.source.channel)
 		
 	def lockdown(self, item):
 		datapipe.Despedia = not datapipe.Despedia
-		utils.log("Lockdown engaged by {} (level {} access). None but hardcoded administrators may issue commands until lifted.".format(item.source.character.name, item.cf_level), 1)
+		utils.log("Lockdown {} by {} (level {} access). None but hardcoded administrators may issue commands until lifted.".format(['disengaged', 'engaged']*datapipe.Despedia, item.source.character.name, item.cf_level), 1)
+		reply("Lockdown {} by {} (level {} access). None but hardcoded administrators may issue commands until lifted.".format(['disengaged', 'engaged']*datapipe.Despedia, item.source.character.name, item.cf_level), item, 2)
 		
 	def hibernation(self, item):
 		try:
@@ -810,7 +812,7 @@ class FListProtocol(WebSocketClientProtocol):
 			
 		except IndexError:	
 			reply("{} F-List Bot, v{}.".format(config.character, config.version), msg, 0)
-			reply("Please note: All commands are executed in the channel they are received from. In case of a PM, you may specify a channel via its ID number. E.g. .kick 1 A Bad Roleplayer will kick A Bad RolePlayer from channel #1. To get a list of IDs and channels, use the command '.lc'. A command without an ID will be parsed as the 'default' channel, here: {}".format(config.channels[0]), msg, 0)
+			reply("Please note: All commands are executed in the channel they are received from. In case of a PM, you may specify a channel via its ID number. E.g. .kick A Bad Roleplayer 1 will kick A Bad RolePlayer from channel #1. To get a list of IDs and channels, use the command '.lc'. A command without an ID will be parsed as the 'default' channel, here: {}".format(config.channels[0]), msg, 0)
 			reply("The following functions are available:", msg, 0)
 			func=[]
 			for x in datapipe.helpDict.keys():

@@ -38,6 +38,7 @@ functions = {
 			".shutdown":	("hibernation",	0, [0]),
 			".join":		("join",		0, [0,1]),
 			".leave":		("leave",		0, [0,1]),
+			".lockdown":	("lockdown",	0, [0,1,2]),
 			".minage":		("minage",		0, [0,1]),
 					
 			".act":			("act",			1, [0,1]),
@@ -55,6 +56,7 @@ functions = {
 			".ignore":		("ignore",		1, [1]),
 					
 			".auth":		("auth",		2, [0]),
+			".bingo":		("bingo", 		2, [0,1]),
 			".lc":			("listIndices",	2, [0]),
 			".help":		("help", 		2, [0,1]),
 			".tell":		("tell", 		2, [0,1])}

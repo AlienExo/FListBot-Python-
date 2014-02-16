@@ -11,11 +11,9 @@ class Song():
 		self.func 		= functions[song]
 		
 		
-functions = {'EXEC_HIBERNATION':"hibernation", 'METHOD_METAFALICA':"_method_metafalica", 'EXEC_LINKER':"_admin", 'EXEC_CHRONICLE=KEY':'hibernation', 'EXEC_SPHILIA':'pass', 'Long Song':"hibernation", "EXEC_PURGER":'exec_purger'}
+functions = {'EXEC_HIBERNATION':"hibernation", 'METHOD_METAFALICA':"_method_metafalica", 'EXEC_LINKER':"_admin", 'EXEC_CHRONICLE=KEY':'hibernation', 'EXEC_SPHILIA':'pass', "EXEC_PURGER":'exec_purger', 'EXEC_DESPEDIA':'lockdown', 'METHOD_ALTERNATION':""}
 		
 dict_songs =	{
-				'Long Song':["Rest now, my warrior. Rest now, your hardship is over...", "Live. Wake up. And let the cloak of life cling to your bones... Cling to your bones. Wake up. Wake up!"],
-
 				'EXEC_HIBERNATION':["Was yea ra enne ar ciel./", 
 									"Rrha num ra sleipir etealune na near na morto ciel./"],
 									
@@ -57,7 +55,10 @@ dict_songs =	{
 										"Ueber der Erde, seit vielen Jahren verdorrt ohne Regen, fallen sanfte Tropfen - ein jeder vergaenglich, ein jeder kostbar..."],
 				
 				'METHOD_REPLEKIA':[	"xO herr mLYOrArA du sphaela, m.t.y.y. giz wOsLYI du giz/.", 
-									"xA herr nAtAnO hymmnos, ut ouvyu m.r.r. du daedu ag ujes/."]}
+									"xA herr nAtAnO hymmnos, ut ouvyu m.r.r. du daedu ag ujes/."],
+									
+				'METHOD_ALTERNATION':['sLYAnAsA ut Cogito ag tLYAhAkAtA du ahjeas/.', 'cAzA YAragym ag nYAyAgEt YAxinfar esyfo/.', 'Please, give me power.', 'Please, give hope to the people.', 'To save', 'this world', 'please recognize me.']					
+				}
 						
 dict_answers = {
 				'EXEC_SPHILIA':{1:"\"Fou paks ga kiafa hynne yor.\"",
@@ -73,5 +74,6 @@ dict_answers = {
 								11:"\"Was ki ga paul yor.\"",
 								12:"\"Mea nille yorr.\"",
 								16:"\"Mea irs here aulla omnis en noes irs sphilar aulla omnis\""},
-				'METHOD_METAFALICA':{1:"Was granme ra chs sos yor/.", 2:"Schon bald tauchen Blueten das Land in helle Farben."}
+				'METHOD_METAFALICA':{1:"Was granme ra chs sos yor/.", 2:"Schon bald tauchen Blueten das Land in helle Farben."},
+				'METHOD_ALTERNATION':{3:'For what reason?', 4:'For whose sake?', 5:'Your wish?', 6:'You desire?'}
 			}
