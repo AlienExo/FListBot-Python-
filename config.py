@@ -1,16 +1,16 @@
 # admins defines who can issue admin-level commands to the bot. Looks like this:
 # admins = ["First Admin", "second admin", "xXx third admin-dono xXX"]
 #please be precise, else python pukes up an error. TIA. 
-admins = 	["Admin1", "Admin Number 2"]
+admins = 	["Exo", "Kalikrates"]
 
 #This is the login infor for the account Cogito runs over.
-account=	"ACCOUNT"
-character=	"CHARACTER"
-password=	"PASSWORD"
+account=	"Cogito"
+character=	"Cogito"
+password=	"1ChD3Nk34Ls=!"
 
 #For channels, make sure you enter their PRECISE title, including any trailing spaces and/or punctuation! 
 #channels=	['Development']
-channels=	['Channel 1. ', 'Second Channel For the Bot']
+channels=	['Gay/Bi Male Human(oid)s. ', 'Coaches, Sweat and Muscles', 'Manly Males of Extra Manly Manliness', 'The Felines Lair~!']
 
 host=		'chat.f-list.net'
 port=		9722	#9722 - Real | 8722 - Dev
@@ -19,6 +19,7 @@ version=	"2.1"
 banter = True
 banterchance = 1.0
 messagelimit = 7
+minSendDelay = 1.0
 
 #Format: Command : (function_name, level required for access, message type required for access.)
 #levels: 
@@ -35,6 +36,7 @@ functions = {
 			".leave":		("leave",		0, [0,1]),
 			".lockdown":	("lockdown",	0, [0,1,2]),
 			".minage":		("minage",		0, [0,1]),
+			".scan":		("scan",		0, [1]),
 					
 			".act":			("act",			1, [0,1]),
 			".noAge":		("alertNoAge",	1, [0,1]),

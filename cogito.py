@@ -1,6 +1,9 @@
 from __future__ import unicode_literals
-#when leaving channel, replace datapipe.channels value with Null to prevent 1 becomine 2, 2 becoming 3.
-#rewrite logging system to be per-channel, perhaps look into creating subfolders.
+
+#instead of user.age, attach a .data dict to users and rewrite.
+#getattr lookup -> dict lookup -> FList api -> Second lookup, dict "not set", return "not set"
+#write def get() or something for User
+
 from collections import deque
 import config
 from copy import deepcopy
@@ -102,36 +105,78 @@ class User():
 	def __init__(self, name):
 		self.name = name
 		self.status = "online"
-		self.strikes = {}
 		self.channels=[]
+		self.data={}
 		self.kinks=()
 		# datapipe.lastseenDict[self.name]=datetime.datetime.now()
 		
-	def __getattribute__(self, item):
+	def __nonzero__(self):
+		print("calling nonzero")
+		return True
+		
+	def parseFListData(self, data, item):
 		try:
-			return object.__getattribute__(self, item)
-		except AttributeError:
-			print("\t Could not find {} in User instance for {}.".format(item, self.name))
-			#the blocking one never completes, the non-blocking returns a deferred that fucks up __getitem__ (and stop all the other stuff from working aparently)... :/
-			#data = threads.blockingCallFromThread(reactor, FListAPI.getCharInfo, name, datapipe.key)
-			d = threads.deferToThread(FListAPI.getCharInfo(self.name, datapipe.key))
-			d.addCallback(userFromFListData)
-			# d.addCallback(object.__getattribute__(self, item))
-			d.addCallback(object.__getattribute__, self, item)
-			return d
-			#data = reactor.callFromThread(FListAPI.getCharInfo, name)
-			#reactor.callInThread(getUserData(self, self.name))
+			for x in data:
+				#print("\t\tSetting '{}' to '{}'".format(str(x).lower(), data[x]))
+				# setattr(self, str(x).lower(), data[x])
+				self.data[str(x).lower()]=data[x]
+		except Exception, exc:
+			print exc
+		
+		try:
+			self.age = int(re.search('(\d{1,5})', data['Age']).group(0))
+			# self.weight = int(re.search('(\d{1,5})', data['Weight']).group(0))
+		except:
+			self.data['age']=0
+			self.age=0
 			
-	#def __str__(self):
+		if not item.lower() in self.data.keys(): return "Not Assigned"
+		else: return self.data[item.lower()]
 
+	"""		
+	def _ga(self, item):
+		try:
+			_item = self.data[item.lower()]
+			return _item
+		except KeyError:
+			# d = threads.deferToThread(FListAPI.getCharInfo(self.name, datapipe.key))
+			# d.addCallback(self.parseFListData, item)
+			# return d
+			data = FListAPI.getCharInfo(self.name, datapipe.key)
+			result = self.parseFListData(data, item)
+			return result
+			
+		except:
+			traceback.print_exc()
+			
+	def __ga(self, item):
+		return item
+	"""		
+	def __getattr__(self, item):
+		try:
+			_item = self.data[item.lower()]
+			return _item
+		except KeyError:
+			# d = threads.deferToThread(FListAPI.getCharInfo(self.name, datapipe.key))
+			# d.addCallback(self.parseFListData, item)
+			# return d
+			data = FListAPI.getCharInfo(self.name, datapipe.key)
+			result = self.parseFListData(data, item)
+			return result
+			
+		except:
+			traceback.print_exc()
+
+		"""	
+		d = defer.maybeDeferred(self._ga, item)
+		d.addCallback(self.__ga)
+		return d
+		"""
+		
 	def kick(self, channel):
 		channel = getChannel(channel)
 		req = json.dumps({"operator":"{}".format(config.character),"channel":channel.key,"character":self.name})
 		sendRaw("CKU {}".format(req))
-		
-	def addStrike(self, channel):
-		strikes = self.strikes[channel.name]
-		strikes+=1
 
 class DataPipe():
 	def __init__(self):
@@ -209,20 +254,19 @@ def saveChannelSettings():
 	utils.saveData(chans, 'channels')
 	del chans
 
-def userFromFListData(name, data):
-	user = getUser(name)
-	print("User data for {} acquired. Updating User instance at {}.".format(name, user))
-	try:
-		for x in data:
-			print("Setting ", user.name, " ", str(x), " to ", data[x])
-			setattr(user, str(x).lower(), data[x])
-	except Exception, exc:
-		print exc
-	try:
-		user.age = int(re.search('(\d{1,5})', data['Age']).group(0))
-		user.weight = int(re.search('(\d{1,5})', data['Weight']).group(0))
-	except KeyError as error: 
-		setattr(user, "".format(error).lower(), 0)
+# def parseFListData(self, data):
+	# try:
+		# print "Processing FList data for {}".format(self.name)
+		# for x in data:
+			# print("Setting ", str(x), " to ", data[x])
+			# setattr(user, str(x).lower(), data[x])
+	# except Exception, exc:
+		# print exc
+	# try:
+		# user.age = int(re.search('(\d{1,5})', data['Age']).group(0))
+		# user.weight = int(re.search('(\d{1,5})', data['Weight']).group(0))
+	# except KeyError as error: 
+		# setattr(user, "".format(error).lower(), 0)
 
 def getUser(user):
 	if isinstance(user, User): return user
@@ -354,17 +398,9 @@ def load(self):
 			print("\tPlugin '{}' successfully initialized.".format(name))
 	print("Import complete.\n")
 		
-def ORSParse(data):
-	print "\nParsing ORS data. Some Assembly Required."
-	for part in data:
-		channel = getChannel(part['title'])
-		channel.key = part['name']
-	return
-
-def checkAge(age, char, chan):
-	chan=getChannel(chan)
-	char.age = age
-	if char.age>=chan.minage:
+def checkAge(char, chan):
+	if (char.age>=chan.minage):
+		print char.age, chan.minage, char.age>=chan.minage, type(char.age)
 		utils.log("User {} has passed inspection for {} (Age>={}), claiming to be {} years old.".format(char.name, chan.name, chan.minage, char.age))
 		chan.userJoined(char.name)
 		return
@@ -404,6 +440,7 @@ def checkAge(age, char, chan):
 	except UnboundLocalError:
 		utils.log("Cannot fetch a mod, none logged in or set to online. Cannot verify user {} for {}.".format(char.name, chan.name), 3, chan.name)
 		for op in chan.ops:
+			op = getUser(op)
 			print("Op: {} Status: {}".format(op.name, op.status))
 		return
 
@@ -419,6 +456,7 @@ class FListProtocol(WebSocketClientProtocol):
 
 	def onMessage(self, msg, binary):
 		# msg = msg.decode('ascii', 'ignore')
+		#if msg[:3] not in ['LIS', 'NLN', 'ORS', 'STA', 'CDS']: print msg
 		message = Message(msg)
 		recvQueue.append((message, self))
 		
@@ -502,7 +540,7 @@ class FListProtocol(WebSocketClientProtocol):
 	
 	def HLO(self, item): 
 		utils.log("Connection established.", 1)
-		sendRaw("ORS")
+		reactor.callLater(1.0, sendRaw, "ORS")
 			
 	def ICH(self, item):
 		chan = getChannel(item.args['channel'])
@@ -519,19 +557,19 @@ class FListProtocol(WebSocketClientProtocol):
 		char = getUser(item.args['character']['identity'])
 		chan = getChannel(item.args['channel'])
 		chan.userJoined(char)
+		if char.name == config.character: return
 		if chan.name[:2]=="ADH": 
 			chan.name=item.args['title']
 			chan.key=item.args['channel']
-		if char.name == config.character: return
 		utils.log("User {} has joined '{}'.".format(char.name, chan.name), 3, chan.name)
 		if char.name in chan.blacklist: 
 			utils.log("User {} is blacklisted and was promptly removed from '{}'.".format(char.name, chan.name), 3, chan.name)
 			chan.kick(char)
 			return
+			
 		if chan.minage == 0: return
 		else:
-			d = threads.deferToThread(FListAPI.getAge, char.name, datapipe.key)
-			d.addCallback(checkAge, char=char, chan=chan)
+			checkAge(char, chan)
 						
 	def LCH(self, item):
 		chan = getChannel(item.args['channel'])
@@ -540,19 +578,28 @@ class FListProtocol(WebSocketClientProtocol):
 		utils.log("User {} has left '{}'.".format(char.name, chan.name), 3, chan.name)
 		chan.userLeft(char)
 					
-	def LIS(self, item):pass
+	def LIS(self, item):
+		chars = item.args['characters']
+		for data in chars:
+			char = getUser(data[0])
+			char.status = data[2]
+			
 	def LRP(self, item):pass
 	def NLN(self, item):pass
 	
 	def ORS(self, item):
 		try:
+			print "\nParsing ORS data. Some Assembly Required."
 			data = item.args['channels']
-			ORSParse(data)
-			for x in config.channels: getChannel(x).join()
+			for part in data:
+				channel = getChannel(part['title'])
+				channel.key = part['name']
+			for x in config.channels: 
+				getChannel(x).join()
 		except Exception:
 			utils.log(traceback.format_exc(), 2)
 		
-	def PIN(self, item): sendRaw("PIN")
+	def PIN(self, item):sendRaw("PIN")
 	def RLL(self, item):pass
 					
 	
@@ -569,6 +616,7 @@ class FListProtocol(WebSocketClientProtocol):
 		server_vars[item.args["variable"]]=item.args["value"]
 		if item.args["variable"]=="msg_flood":
 			new = item.args["value"]*1.5
+			if new<config.minSendDelay: new = config.minSendDelay
 			print("\tDetected server-side flood control. Self-adjusting: sending output every {} milliseconds.".format(new*1000))
 			server_vars['permissions']=1
 			EternalSender.stop()
@@ -744,7 +792,7 @@ class FListProtocol(WebSocketClientProtocol):
 	def alertUnderAge(self, item):
 		try:
 			item.source.channel.alertUnderage = not item.source.channel.alertUnderage
-			reply("Alerts for underage characters are {}. Moderators will{} be alerted to underage characters.".format(['off', 'on'][item.source.channel.alertUnderage*1], ' not'*(not item.source.channel.alertUnderage)), item)
+			reply("Alerts for underage characters are {}. Moderators will{} be alerted to underage characters.".format(['off', 'on'][item.source.channel.alertUnderage], ' not'*(not item.source.channel.alertUnderage)), item)
 			utils.log("{} set the underage alert for {} to '{}'.".format(item.source.character.name, item.source.channel.name, item.source.channel.alertUnderage), 3, item.source.channel.name)
 		except:
 			traceback.print_exc()
@@ -753,7 +801,7 @@ class FListProtocol(WebSocketClientProtocol):
 			
 	def alertNoAge(self, item):
 		item.source.channel.alertNoAge = not item.source.channel.alertNoAge
-		reply("Alerts for characters with no age listed are {}. Moderators will{} be alerted to such characters.".format(['off', 'on'][item.source.channel.alertNoAge*1], ' not'*(not item.source.channel.alertNoAge)), item)
+		reply("Alerts for characters with no age listed are {}. Moderators will{} be alerted to such characters.".format(['off', 'on'][item.source.channel.alertNoAge], ' not'*(not item.source.channel.alertNoAge)), item)
 		utils.log("{} set the mod alert for {} to '{}'.".format(item.source.character.name, item.source.channel.name, item.source.channel.alertNoAge), 3, item.source.channel.name)
 		saveChannelSettings()
 		
@@ -776,8 +824,8 @@ class FListProtocol(WebSocketClientProtocol):
 		
 	def lockdown(self, item):
 		datapipe.Despedia = not datapipe.Despedia
-		utils.log("Lockdown {} by {} (level {} access). None but hardcoded administrators may issue commands until lifted.".format(['disengaged', 'engaged']*datapipe.Despedia, item.source.character.name, item.cf_level), 1)
-		reply("Lockdown {} by {} (level {} access). None but hardcoded administrators may issue commands until lifted.".format(['disengaged', 'engaged']*datapipe.Despedia, item.source.character.name, item.cf_level), item, 2)
+		utils.log("Lockdown {} by {} (level {} access). None but hardcoded administrators may issue commands until lifted.".format(['disengaged', 'engaged'][datapipe.Despedia], item.source.character.name, item.cf_level), 1)
+		reply("Lockdown {} by {} (level {} access). None but hardcoded administrators may issue commands until lifted.".format(['disengaged', 'engaged'][datapipe.Despedia], item.source.character.name, item.cf_level), item, 2)
 		
 	def hibernation(self, item):
 		try:
@@ -857,6 +905,26 @@ class FListProtocol(WebSocketClientProtocol):
 	def infodump(self, msg):
 		#debug command, print __attributes__ or other metadata. get object with __getattr__ and disassemble.
 		pass
+		
+	def scan(self, msg):
+		msg.params = msg.params.lower()
+		reply("Cogito Data Search for '{}'. Searching for parameter '{}'...".format(msg.source.channel.name, msg.params), msg)
+		print("\tEngaging data gathering subroutines. Please stand by.")
+		users=map(getUser, msg.source.channel.users)
+		data = map(lambda x: User.__getattr__(x, msg.params), users)
+		print("\tData gathering complete. {} entries now available.".format(len(data)))
+		permutations = set(data)
+		results = []
+		total = 0.0
+		for permutation in permutations:
+			permutationCount = data.count(permutation)
+			results.append((permutation, permutationCount))
+			total += permutationCount
+		analysis = reduce(lambda x,y: x+"'{}': {} occurences ({:.2%}) ".format(y[0], y[1], y[1]/total), results, "")
+		analysis = "Search of users for '{}' complete. {} entries processed: {}".format(msg.params, len(data), analysis)
+		print analysis
+		reply(analysis, msg)
+			
 		
 def parseText(self, msg):
 	if msg.params[:5]==".auth": utils.log("root-level login attempt by {}".format(msg.source.character.name), 0)
@@ -1051,8 +1119,8 @@ if __name__ == '__main__':
 	connectWS(factory)
 	try:
 		print('Starting reactor.')
-		EternalSender.start(0.500)
-		MainLoop.start(0.100)
+		EternalSender.start(0.75)
+		MainLoop.start(0.2)
 		reactor.run()
 	except:
 		reactor.stop()

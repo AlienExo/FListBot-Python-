@@ -23,7 +23,8 @@ def parseFromJSON(data):
 		frag = data[key]['items']
 """		
 def parseFromHTML(data):
-	res = {u'Age':0}
+	res = {u'Age':'0'}
+	# res = {}
 	for x in data:
 		item = re.findall('<span class=.*>(.*):</span>(.*)', x)
 		if len(item)>0:

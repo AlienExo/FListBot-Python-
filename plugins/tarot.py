@@ -58,10 +58,10 @@ def tarot(self, msgobj):
 			msg += " | "
 			c+=1
 		self.reply(msg, msgobj)
-		self.reply("For further information about any card, type '.t -e [Card Title]', e.g. .t -e The Fool", msgobj, 0)
+		self.reply("For further information about any card, type '.t -e (Card Title)', e.g. .t -e The Fool", msgobj, 0)
 		
 	except IndexError:
-		self.reply("Arguments specified incorrectly. Usage: '.t {}-{} <spread>', or '.t -e <explanation> [Card Title]'; e.g. '.t 0' or '.t -e The Fool'.".format(range(len(spreads))[0], range(len(spreads))[-1]), msgobj)
+		self.reply("Arguments specified incorrectly. Usage: '.t {}-{} <spread>', or '.t -e <explanation> (Card Title)'; e.g. '.t 1' or '.t -e The Fool'.".format(range(len(spreads))[0], range(len(spreads))[-1]), msgobj)
 		traceback.print_exc()
 	
 	except ValueError:
@@ -74,7 +74,7 @@ def tarot(self, msgobj):
 				self.reply("Error: No card named '{}'.".format(msgobj.args[1]), msgobj)
 	
 	except KeyError:
-		self.reply("{} is not a valid number for a spread. Spreads range from {} to {}".format(msgobj.args[0], range(len(spreads))[0], range(len(spreads))[-1]),msgobj)
+		self.reply("{} is not a valid number for a spread. Spreads range from {} to {}".format(msgobj.args[0], range(len(spreads))[0]+1, range(len(spreads))[-1]+1),msgobj)
 		traceback.print_exc()
 
 def __init__(self):
