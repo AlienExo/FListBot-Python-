@@ -12,6 +12,7 @@ import FListAPI
 from hashlib import md5
 import importlib
 import json
+import math
 import os
 import personality
 import random
@@ -110,9 +111,9 @@ class User():
 		self.kinks=()
 		# datapipe.lastseenDict[self.name]=datetime.datetime.now()
 		
-	def __nonzero__(self):
-		print("calling nonzero")
-		return True
+	# def __nonzero__(self):
+		# print("Calling User.__nonzero__")
+		# return True
 		
 	def parseFListData(self, data, item):
 		try:
@@ -399,52 +400,53 @@ def load(self):
 	print("Import complete.\n")
 		
 def checkAge(char, chan):
-	if (char.age>=chan.minage):
-		print char.age, chan.minage, char.age>=chan.minage, type(char.age)
-		utils.log("User {} has passed inspection for {} (Age>={}), claiming to be {} years old.".format(char.name, chan.name, chan.minage, char.age))
-		chan.userJoined(char.name)
-		return
-		
 	if char.name in chan.whitelist: 
 		print ("\t{} is a whitelisted user for {}".format(char.name, chan.name))
 		chan.userJoined(char.name)
 		return
 		
-	xadmins = sorted(map(getUser, chan.ops), key=lambda *args: random.random())
-	xadmins = filter(lambda x: x.status in ['online', 'looking'], xadmins)
-	y = xadmins[0]
-	try:
-		assert y
-		if char.age<chan.minage and char.age!=0:
-			try:
-				banter = eval(banter)
-			except SyntaxError:
-				pass
-			banter = chan.name+": "+banter
-			sendText(banter, 2, char, chan)
-			if config.character in chan.ops:
-				utils.log("Auto-kicking underage user {}.".format(char.name), 3, chan.name)
-				sendText("Your character {} is under the minimum age of {} for the channel '{}' and has thus been removed. If you wish to return, please do so with an of-age alias. {} wishes you a nice day.".format(char.name, chan.minage, config.character), 0, char)
-				char.kick(chan)
-			elif chan.alertUnderAge:
-				sendText("User [color=red]below channel \"{}\"'s minimum age of {}:[/color] [user]{}[/user].".format(chan.name, chan.minage, char.name), 0, char=y)
-				utils.log("User {} under minimum age of {} for {}. Alerting {}.".format(char.name, chan.minage, chan.name, y.name),3, chan.name)
-				banter = random.choice(banBanter)
-		
-		elif char.age == 0:
-			if chan.alertNoAge:
-				utils.log("User {}'s age cannot be parsed. Informing Mod {}".format(char.name, y.name), 3, chan.name)
-				sendText("Can't verify user '[user]{}[/user]' for {} (minimum age set to {}). Please verify. [sub]To add user to the channel's whitelist, reply '.white {} {}' in a PM (or - without the number - in the channel to whitelist for).[/sub]".format(char.name, chan.name, chan.minage, char.name, char.name, chan.index), 0, char=y)
-			return
-		
-	except UnboundLocalError:
-		utils.log("Cannot fetch a mod, none logged in or set to online. Cannot verify user {} for {}.".format(char.name, chan.name), 3, chan.name)
-		for op in chan.ops:
-			op = getUser(op)
-			print("Op: {} Status: {}".format(op.name, op.status))
+	elif (char.age >= chan.minage):
+		print char.age, chan.minage, char.age>=chan.minage, type(char.age)
+		utils.log("User {} has passed inspection for {} (Age>={}), claiming to be {} years old.".format(char.name, chan.name, chan.minage, char.age))
+		chan.userJoined(char.name)
 		return
+		
+	else:
+		xadmins = sorted(map(getUser, chan.ops), key=lambda *args: random.random())
+		xadmins = filter(lambda x: x.status in ['online', 'looking'], xadmins)
+		y = xadmins[0]
+		try:
+			if not isinstance(y, User): raise UnboundLocalError
+			if char.age<chan.minage and char.age!=0:
+				try:
+					banter = eval(banter)
+				except SyntaxError:
+					pass
+				banter = chan.name+": "+banter
+				sendText(banter, 2, char, chan)
+				if config.character in chan.ops:
+					utils.log("Auto-kicking underage user {}.".format(char.name), 3, chan.name)
+					sendText("Your character {} is under the minimum age of {} for the channel '{}' and has thus been removed. If you wish to return, please do so with an of-age alias. {} wishes you a nice day.".format(char.name, chan.minage, config.character), 0, char)
+					char.kick(chan)
+				elif chan.alertUnderAge:
+					sendText("User [color=red]below channel \"{}\"'s minimum age of {}:[/color] [user]{}[/user].".format(chan.name, chan.minage, char.name), 0, char=y)
+					utils.log("User {} under minimum age of {} for {}. Alerting {}.".format(char.name, chan.minage, chan.name, y.name),3, chan.name)
+					banter = random.choice(banBanter)
+			
+			elif char.age == 0:
+				if chan.alertNoAge:
+					utils.log("User {}'s age cannot be parsed. Informing Mod {}".format(char.name, y.name), 3, chan.name)
+					sendText("Can't verify user '[user]{}[/user]' for {} (minimum age set to {}). Please verify. [sub]To add user to the channel's whitelist, reply '.white {} {}' in a PM (or - without the number - in the channel to whitelist for).[/sub]".format(char.name, chan.name, chan.minage, char.name, char.name, chan.index), 0, char=y)
+				return
+			
+		except UnboundLocalError:
+			utils.log("Cannot fetch a mod, none logged in or set to online. Cannot verify user {} for {}.".format(char.name, chan.name), 3, chan.name)
+			for op in chan.ops:
+				op = getUser(op)
+				print("Op: {} Status: {}".format(op.name, op.status))
+			return
 
-	except: traceback.print_exc()
+		except: traceback.print_exc()
 
 class FListProtocol(WebSocketClientProtocol):
 	def __init__(self):
@@ -600,6 +602,22 @@ class FListProtocol(WebSocketClientProtocol):
 			utils.log(traceback.format_exc(), 2)
 		
 	def PIN(self, item):sendRaw("PIN")
+	
+	def PRF(self, item):
+		"""PRD
+		Profile data commands sent in response to a PRO client command.
+		Syntax
+		>> PRD { "type": enum, "message": string, "key": string, "value": string }
+		The message field is sent when the type is "start" or "end", as it will be displayed to the user. First, a PRD command of type "start" is sent, then a series of PRD commands of type "info" and "select", holding "key" "value" properties of the character's profile properties. Then, finally a PRD command of type "end" is sent. 
+		"""
+		#receive data, from flag: know what to return. Defer() the process? Callback?
+	
+		pass
+	
+	def PRO(self, item):
+		#send request
+		pass		
+		
 	def RLL(self, item):pass
 					
 	
@@ -907,21 +925,61 @@ class FListProtocol(WebSocketClientProtocol):
 		pass
 		
 	def scan(self, msg):
+		numeric = False
+		stats = False
+		anon = False
+		if "-n" in msg.args:
+			numeric=True
+			msg.args.remove('-n')
+			msg.params=" ".join(msg.args)
+		if "-s" in msg.args:
+			stats=True
+			msg.args.remove('-s')
+			msg.params=" ".join(msg.args)
+		if "-a" in msg.args:
+			anon=True
+			msg.args.remove('-a')
+			msg.params=" ".join(msg.args)		
+		
 		msg.params = msg.params.lower()
-		reply("Cogito Data Search for '{}'. Searching for parameter '{}'...".format(msg.source.channel.name, msg.params), msg)
 		print("\tEngaging data gathering subroutines. Please stand by.")
 		users=map(getUser, msg.source.channel.users)
-		data = map(lambda x: User.__getattr__(x, msg.params), users)
-		print("\tData gathering complete. {} entries now available.".format(len(data)))
-		permutations = set(data)
-		results = []
-		total = 0.0
-		for permutation in permutations:
-			permutationCount = data.count(permutation)
-			results.append((permutation, permutationCount))
-			total += permutationCount
-		analysis = reduce(lambda x,y: x+"'{}': {} occurences ({:.2%}) ".format(y[0], y[1], y[1]/total), results, "")
-		analysis = "Search of users for '{}' complete. {} entries processed: {}".format(msg.params, len(data), analysis)
+		assocData = map(lambda x: (User.__getattr__(x, msg.params), x.name), users)
+		oldDataLen=len(assocData)
+		print("Starting with processing of {} entries.".format(len(assocData)))
+		data=map(lambda x: x[0], assocData)
+		if numeric: 
+			_data = []
+			for index, item in enumerate(assocData):
+				n=str(item[0]).replace(',', '.')
+				try:
+					n=float(re.search('\d{1,5}\.?\d{0,2}', n).group(0))
+					if not n==0: 
+						_data.append((n, item[1]))		
+				except:pass
+			assocData = dict(_data)
+			data=map(lambda x: x[0], _data)
+		print("\tData processing complete. {} entries now available.".format(len(data)))
+		if len(data)==0: return
+		print("Beginning analysis.")
+		if not stats:	
+			permutations = set(data)
+			results = []
+			total = 0.0
+			for permutation in permutations:
+				permutationCount = data.count(permutation)
+				results.append((permutation, permutationCount))
+				total += permutationCount
+			analysis = reduce(lambda x,y: x+"'{}': {} occurences ({:.2%}) ".format(y[0], y[1], y[1]/total), results, "")
+		else:
+			dataTotal = reduce(lambda x,y: x+y, data, 0.0)
+			dataAvg = dataTotal/len(data)
+			dataStDev=map(lambda x: (x-dataAvg)**2, data)
+			dataStDev=reduce(lambda x,y: x+y, dataStDev, 0.0)
+			dataStDev=math.sqrt(dataStDev/len(data))
+			dataMedian=sorted(data)[len(data)//2]
+			analysis = "Mean: {:.2f}. Median: {:.2f}. Maximum: {:.2f}{}. Minimum: {:.2f}{}. Standard Deviation: {:.3f}. (Only nonzero entries were counted).".format(dataAvg, dataMedian, max(data), ['', ' ({})'.format(assocData[max(data)])][anon], min(data), ['', ' ({})'.format(assocData[min(data)])][anon], dataStDev)
+		analysis = "Search of users for '{}' complete. {} of {} entries could be processed. {}".format(msg.params, len(data), oldDataLen, analysis)
 		print analysis
 		reply(analysis, msg)
 			
