@@ -1,7 +1,7 @@
 # admins defines who can issue admin-level commands to the bot. Looks like this:
 # admins = ["First Admin", "second admin", "xXx third admin-dono xXX"]
 #please be precise, else python pukes up an error. TIA. 
-admins = 	["Exo", "Kalikrates"]
+admins = 	["Exo", "Kalikrates", "Hank Thompson"]
 
 #This is the login infor for the account Cogito runs over.
 account=	"Cogito"
