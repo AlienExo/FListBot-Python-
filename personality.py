@@ -27,13 +27,27 @@ def spokenRelativeSize(n, nn):
 		return random.choice(sizes[k[bs]])
 	except:
 		traceback.print_exc()
-
+		
+def strToNumber(s):
+	#scan for comma/point/./,
+	#just dumbly go left to right, replace single integers with their equivalent, ignore all tens/other modifiers?
+	s=s.replace("-", " ")
+	s=s.split()
+	ones = {'zero':0, 'one':1, 'two':2, 'three':3, 'four':4, 'five':5, 'six':6, 'seven':7, 'eight':8, 'nine':9 , 'ten':10, 'twenty':2, 'thirty':3}
+	pass
+	
 def spokenNumber(d):
+	print d, type(d)
+	if type(d)==str:
+		if("." in d): d = float(d)
+		else: d=int(d)
 	try:
 		if math.log10(d)>10: return False
-	except ValueError:
-		pass
-	except TypeError: print "Not a number."
+	except ValueError:pass
+	except TypeError:
+		print "Not an int/float."
+		return False
+		
 	if type(d)==float: 
 		a = str(d).split('.')
 		for x in a[1]: a.append(x)
@@ -67,7 +81,7 @@ def spokenNumber(d):
 			swords.append(units[pos]*(pos>1))
 		b.append("".join(swords).strip())
 	if len(a)>1: return "{} {} {}".format(b[0], 'point', ' '.join(b[1:]))
-	return ''.join(b)
+	return ''.join(b).capitalize()
 	
 def fuzzyNumber(d):
 	sd=str(d)
@@ -84,7 +98,7 @@ def fuzzyNumber(d):
 #super unfinished
 def spokenFraction(d):
 	lines = {0:['', ''], 0.25:['', ''], 0.5:['', ''], 0.75:['', '']}
-	power = log10(d)
+	power = math.log10(d)
 	cat = d//0.25
 	return random.choice(lines[cat])
 

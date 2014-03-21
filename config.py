@@ -35,8 +35,8 @@ functions = {
 			".join":		("join",		0, [0,1]),
 			".leave":		("leave",		0, [0,1]),
 			".lockdown":	("lockdown",	0, [0,1,2]),
-			".minage":		("minage",		0, [0,1]),
-			".scan":		("scan",		0, [1]),
+			".pt":			("persTest",	0, [1]),
+			".sn":			("sn",			0, [1]),
 					
 			".act":			("act",			1, [0,1]),
 			".noAge":		("alertNoAge",	1, [0,1]),
@@ -46,9 +46,11 @@ functions = {
 			".deop":		("deop", 		1, [0,1]),
 			".kick":		("kick",		1, [0,1]),
 			".lj":			("lastJoined",	1, [0,1]),
+			".minage":		("minage",		1, [0,1]),
 			".op":			("op", 			1, [0,1]),
 			".r":			("rainbowText",	1, [0,1]),
 			".say":			("say",			1, [0,1]),
+			".scan":		("scan",		1, [1]),
 			".white":		("whitelist",	1, [0,1]),
 			".ignore":		("ignore",		1, [1]),
 					

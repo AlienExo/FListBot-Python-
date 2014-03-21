@@ -64,7 +64,7 @@ class Channel():
 	def userJoined(chan, character):
 		char = getUser(character)
 		chan.users.append(char.name)
-		chan.lastjoined.append(char.name)
+		if not char.name in chan.lastjoined: chan.lastjoined.append(char.name)
 		# if datapipe.personality != None: 
 		telling(char, chan)
 		# else: datapipe.personality.code.telling(datapipe.FListProtocol, char, chan)
@@ -99,13 +99,13 @@ class Channel():
 	
 	def toggleLock(self):
 		self.status = not self.status
-		sendRaw("RST {}".format(json.dumps({'channel':self.key, 'status': ['private', 'public'][self.status]})))
-		reply("Channel '{}' set to '{}'.".format(self.name, ['private', 'public'][self.status]))
+		sendRaw("RST {}".format(json.dumps({'channel':self.key, 'status': ['private', 'public'][self.isPublic]})))
+		reply("Channel '{}' set to '{}'.".format(self.name, ['private', 'public'][self.isPublic]))
 		
 class User():
 	def __init__(self, name):
-		self.name = name
-		self.status = "online"
+		self.name=name
+		self.status="online"
 		self.channels=[]
 		self.data={}
 		self.kinks=()
@@ -116,64 +116,36 @@ class User():
 		# return True
 		
 	def parseFListData(self, data, item):
-		try:
-			for x in data:
-				#print("\t\tSetting '{}' to '{}'".format(str(x).lower(), data[x]))
-				# setattr(self, str(x).lower(), data[x])
-				self.data[str(x).lower()]=data[x]
-		except Exception, exc:
-			print exc
-		
+		for x in data:
+			#print("\t\tSetting '{}' to '{}'".format(str(x).lower(), data[x]))
+			self.data[str(x).lower()]=data[x]
 		try:
 			self.age = int(re.search('(\d{1,5})', data['Age']).group(0))
 			# self.weight = int(re.search('(\d{1,5})', data['Weight']).group(0))
 		except:
 			self.data['age']=0
 			self.age=0
-			
 		if not item.lower() in self.data.keys(): return "Not Assigned"
 		else: return self.data[item.lower()]
 
-	"""		
-	def _ga(self, item):
-		try:
-			_item = self.data[item.lower()]
-			return _item
-		except KeyError:
-			# d = threads.deferToThread(FListAPI.getCharInfo(self.name, datapipe.key))
-			# d.addCallback(self.parseFListData, item)
-			# return d
-			data = FListAPI.getCharInfo(self.name, datapipe.key)
-			result = self.parseFListData(data, item)
-			return result
-			
-		except:
-			traceback.print_exc()
-			
-	def __ga(self, item):
-		return item
-	"""		
 	def __getattr__(self, item):
 		try:
-			_item = self.data[item.lower()]
-			return _item
-		except KeyError:
+			return object.__getattr__(self, item)
+		except AttributeError:
+			try:
+				_item = self.data[item.lower()]
+				return _item
+			except KeyError:
 			# d = threads.deferToThread(FListAPI.getCharInfo(self.name, datapipe.key))
 			# d.addCallback(self.parseFListData, item)
 			# return d
-			data = FListAPI.getCharInfo(self.name, datapipe.key)
-			result = self.parseFListData(data, item)
-			return result
+				data = FListAPI.getCharInfo(self.name, datapipe.key)
+				result = self.parseFListData(data, item)
+				return result
 			
 		except:
 			traceback.print_exc()
 
-		"""	
-		d = defer.maybeDeferred(self._ga, item)
-		d.addCallback(self.__ga)
-		return d
-		"""
-		
 	def kick(self, channel):
 		channel = getChannel(channel)
 		req = json.dumps({"operator":"{}".format(config.character),"channel":channel.key,"character":self.name})
@@ -254,20 +226,6 @@ def saveChannelSettings():
 			chans[name]=newinst
 	utils.saveData(chans, 'channels')
 	del chans
-
-# def parseFListData(self, data):
-	# try:
-		# print "Processing FList data for {}".format(self.name)
-		# for x in data:
-			# print("Setting ", str(x), " to ", data[x])
-			# setattr(user, str(x).lower(), data[x])
-	# except Exception, exc:
-		# print exc
-	# try:
-		# user.age = int(re.search('(\d{1,5})', data['Age']).group(0))
-		# user.weight = int(re.search('(\d{1,5})', data['Weight']).group(0))
-	# except KeyError as error: 
-		# setattr(user, "".format(error).lower(), 0)
 
 def getUser(user):
 	if isinstance(user, User): return user
@@ -398,52 +356,65 @@ def load(self):
 		else:
 			print("\tPlugin '{}' successfully initialized.".format(name))
 	print("Import complete.\n")
+	
+def getMod(chan):
+	xadmins = filter(lambda x: x in chan.users and x!=config.character and x not in chan.ignoreops, chan.ops)
+	xadmins = sorted(map(getUser, xadmins), key=lambda *args: random.random())
+	yadmins = filter(lambda x: x.status not in ["busy", "dnd"], xadmins)
+	try:
+		return yadmins[0]
+	except IndexError:
+		return None
 		
 def checkAge(char, chan):
-	if char.name in chan.whitelist: 
+	#keeps passing despite a FALSE. Why is the bool wrong??
+	# 02/25/14 11:39:38 -- (Coaches, Sweat and Muscles) User Joel Montgomery has joined 'Coaches, Sweat and Muscles'.
+	# (15, <type 'int'>, 18, <type 'int'>, False)
+	# 02/25/14 11:39:39 -- (System) User Joel Montgomery has passed inspection for Coaches, Sweat and Muscles (Age>=18), claiming to be 15 years old.
+	# assert type(char.age)==int
+	if(char.name in chan.whitelist): 
 		print ("\t{} is a whitelisted user for {}".format(char.name, chan.name))
 		chan.userJoined(char.name)
 		return
 		
-	elif (char.age >= chan.minage):
-		print char.age, chan.minage, char.age>=chan.minage, type(char.age)
-		utils.log("User {} has passed inspection for {} (Age>={}), claiming to be {} years old.".format(char.name, chan.name, chan.minage, char.age))
+	elif(char.age>=chan.minage):
+		utils.log("{} ({}) passed inspection for '{}' (minimum age {}).".format(char.name, char.age, chan.name, chan.minage))
 		chan.userJoined(char.name)
 		return
 		
 	else:
-		xadmins = sorted(map(getUser, chan.ops), key=lambda *args: random.random())
-		xadmins = filter(lambda x: x.status in ['online', 'looking'], xadmins)
-		y = xadmins[0]
+		if not chan.alertUnderage and not chan.alertNoAge: return
 		try:
-			if not isinstance(y, User): raise UnboundLocalError
-			if char.age<chan.minage and char.age!=0:
-				try:
-					banter = eval(banter)
-				except SyntaxError:
-					pass
-				banter = chan.name+": "+banter
-				sendText(banter, 2, char, chan)
-				if config.character in chan.ops:
-					utils.log("Auto-kicking underage user {}.".format(char.name), 3, chan.name)
-					sendText("Your character {} is under the minimum age of {} for the channel '{}' and has thus been removed. If you wish to return, please do so with an of-age alias. {} wishes you a nice day.".format(char.name, chan.minage, config.character), 0, char)
-					char.kick(chan)
-				elif chan.alertUnderAge:
-					sendText("User [color=red]below channel \"{}\"'s minimum age of {}:[/color] [user]{}[/user].".format(chan.name, chan.minage, char.name), 0, char=y)
-					utils.log("User {} under minimum age of {} for {}. Alerting {}.".format(char.name, chan.minage, chan.name, y.name),3, chan.name)
-					banter = random.choice(banBanter)
-			
-			elif char.age == 0:
+			if char.age == 0:
+				print("User {}'s age cannot be parsed.".format(char.name))
 				if chan.alertNoAge:
+					y = getMod(chan)
+					if not isinstance(y, User): raise IndexError
 					utils.log("User {}'s age cannot be parsed. Informing Mod {}".format(char.name, y.name), 3, chan.name)
-					sendText("Can't verify user '[user]{}[/user]' for {} (minimum age set to {}). Please verify. [sub]To add user to the channel's whitelist, reply '.white {} {}' in a PM (or - without the number - in the channel to whitelist for).[/sub]".format(char.name, chan.name, chan.minage, char.name, char.name, chan.index), 0, char=y)
-				return
-			
-		except UnboundLocalError:
+					sendText("Can't verify user '[user]{}[/user]' for {} (minimum age set to {}). Please verify. [sub]To add user to the channel's whitelist, reply '.white {} {}' in a PM (or - without the number - in the channel to whitelist for).[/sub]".format(char.name, chan.name, chan.minage, char.name, chan.index), 0, char=y)
+				return	
+			else:
+				utils.log("User {} under minimum age {} for {}.".format(char.name, chan.minage, chan.name), 3, chan.name)
+				try:
+					banter = eval(random.choice(banBanter))
+					banter = char.name+": "+banter
+					sendText(banter, 2, char, chan)
+				except:
+					pass
+				if chan.alertUnderage:
+					if config.character in chan.ops:
+						utils.log("Auto-kicking underage user {}.".format(char.name), 3, chan.name)
+						sendText("Your character {} is under the minimum age of {} for the channel '{}' and has thus been removed. If you wish to return, please do so with an of-age alias. {} wishes you a nice day.".format(char.name, chan.minage, config.character), 0, char)
+						char.kick(chan)
+						return
+					y = getMod(chan)
+					if not isinstance(y, User): raise IndexError
+					utils.log("Alerting {} to underage user {}.".format(y.name, char.name),3, chan.name)
+					sendText("User [color=red]below channel \"{}\"'s minimum age of {}:[/color] [user]{}[/user].".format(chan.name, chan.minage, char.name), 0, char=y)
+								
+		except IndexError:
 			utils.log("Cannot fetch a mod, none logged in or set to online. Cannot verify user {} for {}.".format(char.name, chan.name), 3, chan.name)
-			for op in chan.ops:
-				op = getUser(op)
-				print("Op: {} Status: {}".format(op.name, op.status))
+			return
 			return
 
 		except: traceback.print_exc()
@@ -513,7 +484,8 @@ class FListProtocol(WebSocketClientProtocol):
 			if not op in chan.ops: 
 				chan.ops.append(op)
 				chanAdmins.append(op)
-		print ("Channel operators for "+chan.name+": "+ ", ".join(chan.ops))
+		chan.ops.sort()
+		print ("Channel operators for "+chan.name+": "+ ", ".join(chan.ops)+"\n")
 		
 	def CON(self, item):
 		with open('./data/user stats.txt', 'a') as io:
@@ -568,10 +540,10 @@ class FListProtocol(WebSocketClientProtocol):
 			utils.log("User {} is blacklisted and was promptly removed from '{}'.".format(char.name, chan.name), 3, chan.name)
 			chan.kick(char)
 			return
-			
 		if chan.minage == 0: return
-		else:
-			checkAge(char, chan)
+		try: assert char.age
+		except AssertionError: pass
+		checkAge(char, chan)
 						
 	def LCH(self, item):
 		chan = getChannel(item.args['channel'])
@@ -611,7 +583,6 @@ class FListProtocol(WebSocketClientProtocol):
 		The message field is sent when the type is "start" or "end", as it will be displayed to the user. First, a PRD command of type "start" is sent, then a series of PRD commands of type "info" and "select", holding "key" "value" properties of the character's profile properties. Then, finally a PRD command of type "end" is sent. 
 		"""
 		#receive data, from flag: know what to return. Defer() the process? Callback?
-	
 		pass
 	
 	def PRO(self, item):
@@ -619,12 +590,15 @@ class FListProtocol(WebSocketClientProtocol):
 		pass		
 		
 	def RLL(self, item):pass
-					
+	def RTB(self, item):pass
 	
 	def STA(self, item):
 		if item.args['character'] in chanAdmins:
-			getUser(item.args['character']).status = item.args['status']			
-	
+			user = getUser(item.args['character'])
+			status = item.args['status']
+			print("{} changed statis to '{}'.".format(user.name, status))
+			user.status = status
+			
 	def SYS(self, item):
 		utils.log(item.args['message'], 1)
 	
@@ -652,9 +626,14 @@ class FListProtocol(WebSocketClientProtocol):
 	def whitelist(self, item):
 		candidate = item.params
 		# datapipe.whitelist.append(candidate)
-		item.source.channel.whitelist.append(candidate)
-		reply("{} has been whitelisted for {}.".format(candidate, item.source.channel.name), item)	
-		utils.log("{} has been whitelisted for {} by {} (level {} access).".format(candidate, item.source.channel.name, item.source.character.name, item.cf_level), 1)
+		if not candidate in item.source.channel.whitelist: 
+			item.source.channel.whitelist.append(candidate)
+			reply("{} has been whitelisted for {}.".format(candidate, item.source.channel.name), item)	
+			utils.log("{} has been whitelisted for {} by {} (level {} access).".format(candidate, item.source.channel.name, item.source.character.name, item.cf_level), 1)
+		else:
+			item.source.channel.whitelist.remove(candidate)
+			reply("{} has been removed from the whitelist for {}.".format(candidate, item.source.channel.name), item)	
+			utils.log("{} removed from whitelist for {} by {} (level {} access).".format(candidate, item.source.channel.name, item.source.character.name, item.cf_level), 1)
 		saveChannelSettings()
 		#utils.saveData(datapipe.whitelist, 'whitelist')
 
@@ -830,7 +809,6 @@ class FListProtocol(WebSocketClientProtocol):
 		slist=[]
 		a = len(item.params)
 		b,c = divmod(a, 6)
-		print a, b, c
 		for x in xrange(0, a, b):
 			slist.append(item.params[x:x+b])
 		if c == 0: slist.append('')
@@ -940,18 +918,22 @@ class FListProtocol(WebSocketClientProtocol):
 			anon=True
 			msg.args.remove('-a')
 			msg.params=" ".join(msg.args)		
-		
 		msg.params = msg.params.lower()
 		print("\tEngaging data gathering subroutines. Please stand by.")
 		users=map(getUser, msg.source.channel.users)
 		assocData = map(lambda x: (User.__getattr__(x, msg.params), x.name), users)
 		oldDataLen=len(assocData)
-		print("Starting with processing of {} entries.".format(len(assocData)))
+		print("\tProcessing {} entries...".format(len(assocData)))
 		data=map(lambda x: x[0], assocData)
 		if numeric: 
 			_data = []
 			for index, item in enumerate(assocData):
-				n=str(item[0]).replace(',', '.')
+				n=item[0]
+				try:
+					if type(item[0])==int: n=str(n)
+					n=re.sub(',\'', '\.', n)
+				except:
+					print("Error with data point {} from user {}. Is it an infinity sign again? Uuuugh.".format(item[0], item[1]))
 				try:
 					n=float(re.search('\d{1,5}\.?\d{0,2}', n).group(0))
 					if not n==0: 
@@ -961,28 +943,45 @@ class FListProtocol(WebSocketClientProtocol):
 			data=map(lambda x: x[0], _data)
 		print("\tData processing complete. {} entries now available.".format(len(data)))
 		if len(data)==0: return
-		print("Beginning analysis.")
+		print("\tBeginning analysis.")
 		if not stats:	
 			permutations = set(data)
 			results = []
 			total = 0.0
 			for permutation in permutations:
 				permutationCount = data.count(permutation)
-				results.append((permutation, permutationCount))
+				results.append((permutationCount, permutation))
 				total += permutationCount
-			analysis = reduce(lambda x,y: x+"'{}': {} occurences ({:.2%}) ".format(y[0], y[1], y[1]/total), results, "")
+			results.sort(reverse=True)
+			analysis = reduce(lambda x,y: x+"{}: {} occurences ({:.2%}), ".format(y[1], y[0], y[0]/total), results, "")
+			analysis=analysis.rstrip(', ')
 		else:
 			dataTotal = reduce(lambda x,y: x+y, data, 0.0)
 			dataAvg = dataTotal/len(data)
 			dataStDev=map(lambda x: (x-dataAvg)**2, data)
 			dataStDev=reduce(lambda x,y: x+y, dataStDev, 0.0)
-			dataStDev=math.sqrt(dataStDev/len(data))
+			dataStDev=round(math.sqrt(dataStDev/len(data)), 2)
 			dataMedian=sorted(data)[len(data)//2]
-			analysis = "Mean: {:.2f}. Median: {:.2f}. Maximum: {:.2f}{}. Minimum: {:.2f}{}. Standard Deviation: {:.3f}. (Only nonzero entries were counted).".format(dataAvg, dataMedian, max(data), ['', ' ({})'.format(assocData[max(data)])][anon], min(data), ['', ' ({})'.format(assocData[min(data)])][anon], dataStDev)
-		analysis = "Search of users for '{}' complete. {} of {} entries could be processed. {}".format(msg.params, len(data), oldDataLen, analysis)
+			analysis = "Mean: {:.2f}\tMedian: {:.2f}\tMaximum: {:.2f}{}\tMinimum: {:.2f}{}\tStandard Deviation: {:.3f}\tTotal: {:.2f}. (Only nonzero entries were counted).".format(dataAvg, dataMedian, max(data), ['', ' ({})'.format(assocData[max(data)])][anon], min(data), ['', ' ({})'.format(assocData[min(data)])][anon], dataStDev, dataTotal)
+		analysis = "Search of users for '{}' complete. {} of {} entries could be processed.\n{}".format(msg.params, len(data), oldDataLen, analysis)
 		print analysis
 		reply(analysis, msg)
-			
+		
+		
+	def persTest(self, item):
+		item.args = map(lambda x: str(x), item.args)
+		func = getattr(personality, item.args[0])
+		if callable(func):
+			print func
+			try:
+				res = func(*item.args[1:])
+				reply(res, item)
+			except Exception as e:
+				reply(e, item)
+				
+	def sn(self, item):
+		numbers=personality.spokenNumber(str(item.params))
+		reply(numbers, item)
 		
 def parseText(self, msg):
 	if msg.params[:5]==".auth": utils.log("root-level login attempt by {}".format(msg.source.character.name), 0)
@@ -1032,8 +1031,9 @@ def parseText(self, msg):
 				# print("\tCorrect access type")
 				msg.cf_level = 2
 				if msg.source.character.name in config.admins: msg.cf_level=0
-				elif (msg.source.channel.name!="PM") and (msg.source.character.name in msg.source.channel.ops): msg.cf_level = 1
+				elif (msg.source.character.name in msg.source.channel.ops): msg.cf_level = 1
 				# elif msg.source.character.name in chanAdmins: msg.cf_level=1
+				#print "Have: ", msg.cf_level, "Need: ", func_params[1]
 				if msg.cf_level <= func_params[1]:
 					# print ("\tHandling '{}'...".format(func_params[0]))
 					handle_all_the_things(self, msg, func_params[0])
@@ -1131,7 +1131,7 @@ def _telling(char):
 	try:
 		for x in datapipe.messageDict[char.name.lower()]:
 			d = utils.timeFrac(datetime.datetime.now()-x[2])
-			# returns (formatted string w/ fractoin, (major number, numeric fraction, time unit))
+			# returns (formatted string w/ fraction, (major number, numeric fraction, time unit))
 			messages.append((x[0], x[1], d))
 	except KeyError: return []
 	else:
@@ -1145,7 +1145,7 @@ def telling(char, chan):
 	if c==0: return
 	sendText("[color=green]{}, you have {} new message{}:[/color]".format(char.name, personality.spokenNumber(c), 's'*(c>1)), 1, char, chan)
 	for x in messages:
-		sendText("[color=yellow]<{}> [color=green]{}[/color] ({} ago)[/color]".format(x[0], x[1], x[2][0]), 2, char, chan)
+		sendText("[color=yellow]<{}>[color=green]{}[/color] ({} ago)[/color]".format(x[0], x[1], x[2][0]), 2, char, chan)
 						
 def qsend():
 	try:
@@ -1165,7 +1165,7 @@ def mainloop():
 		else:
 			parseText(self, item)
 	except IndexError: pass
-	
+
 if __name__ == '__main__':
 	load(datapipe)
 	datapipe.personality = personality.__init__(config)
