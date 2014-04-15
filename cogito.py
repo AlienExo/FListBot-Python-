@@ -953,7 +953,7 @@ class FListProtocol(WebSocketClientProtocol):
 				results.append((permutationCount, permutation))
 				total += permutationCount
 			results.sort(reverse=True)
-			analysis = reduce(lambda x,y: x+"{}: {} occurences ({:.2%}), ".format(y[1], y[0], y[0]/total), results, "")
+			analysis = reduce(lambda x,y: x+"{}: {} occurrences ({:.2%}), ".format(y[1], y[0], y[0]/total), results, "")
 			analysis=analysis.rstrip(', ')
 		else:
 			dataTotal = reduce(lambda x,y: x+y, data, 0.0)
