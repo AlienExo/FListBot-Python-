@@ -10,6 +10,7 @@ import yaml
 
 def log(text, ltype=0, channel="System"):
 	"""Merely dresses up text with a timestamp and prints it (ltype 0), writes to '<BOT> events.log' (ltype 1), or '<BOT> errors.log' (ltype 2), or '<BOT> conversation.log'(type 3)"""
+	text=text.encode('ascii', 'replace')
 	files=['', ' events', ' errors', channel]
 	print("{} -- ({}) {}".format(time.strftime("%c"), channel, text))
 	text="{} -- {}".format(time.strftime("%c"), text)

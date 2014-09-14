@@ -1,4 +1,4 @@
-from __future__ import unicode_literals
+#from __future__ import unicode_literals
 
 #instead of user.age, attach a .data dict to users and rewrite.
 #getattr lookup -> dict lookup -> FList api -> Second lookup, dict "not set", return "not set"
@@ -110,11 +110,20 @@ class User():
 		self.data={}
 		self.kinks=()
 		# datapipe.lastseenDict[self.name]=datetime.datetime.now()
+
+	def __str__(self, *args):
+		return self.name
+		
+	def __format__(self, *args):
+		return object.__format__(self, *args)
+		
+	def __repr__(self, *args):
+		return self.name
 		
 	# def __nonzero__(self):
 		# print("Calling User.__nonzero__")
 		# return True
-		
+	
 	def parseFListData(self, data, item):
 		for x in data:
 			#print("\t\tSetting '{}' to '{}'".format(str(x).lower(), data[x]))
@@ -125,26 +134,28 @@ class User():
 		except:
 			self.data['age']=0
 			self.age=0
-		if not item.lower() in self.data.keys(): return "Not Assigned"
-		else: return self.data[item.lower()]
+		if not item.lower() in self.data.keys(): self.data[item.lower()]="Not Assigned"
+		return self.data[item.lower()]
 
 	def __getattr__(self, item):
+		d = defer.maybeDeferred(self.getItem, item)
+		return d			
+
+	def getItem(self, item):
 		try:
 			return object.__getattr__(self, item)
 		except AttributeError:
 			try:
 				_item = self.data[item.lower()]
+				print _item
 				return _item
 			except KeyError:
-			# d = threads.deferToThread(FListAPI.getCharInfo(self.name, datapipe.key))
-			# d.addCallback(self.parseFListData, item)
-			# return d
-				data = FListAPI.getCharInfo(self.name, datapipe.key)
-				result = self.parseFListData(data, item)
-				return result
-			
-		except:
-			traceback.print_exc()
+				e = threads.deferToThread(FListAPI.getCharInfo, self.name, datapipe.key)
+				e.addCallback(self.parseFListData, item)
+				return e
+				#data = FListAPI.getCharInfo(self.name, datapipe.key)
+				#result = self.parseFListData(data, item)
+				#return result
 
 	def kick(self, channel):
 		channel = getChannel(channel)
@@ -176,8 +187,9 @@ class DataPipe():
 	def saveData(self, data, file):
 		utils.saveData(data, file)
 
-	def reply(self, message, item, path_override=None):
-		reply(message, item, path_override)
+	def reply(self, message, msgobj, path_override=None):
+		print message
+		msgobj.reply(message, path_override)
 		
 	def writeLog(self, text):
 		utils.log(text, 1)
@@ -190,6 +202,7 @@ def sendRaw(msg):
 def sendText(message, route=1, char=config.character, chan='PM'):
 	"""	Route	0			1			2				3				4
 		Target	PM		Channel		Channel+Prefix	Action in MSG	Action in PRI"""
+	message = message.encode('utf-8', errors='replace')
 	char=getUser(char).name
 	if chan=='PM': route=0
 	else: chan=getChannel(chan).key
@@ -209,11 +222,11 @@ def sendText(message, route=1, char=config.character, chan='PM'):
 			msg = "{} {}".format(path, json.dumps({'channel':chan, 'message':message}))
 	sendQueue.append(msg)
 	
-def reply(message, item, path_override=None):
-	if not hasattr(item, 'access_type'): item.access_type = 0
-	if path_override is not None: path = path_override
-	else: path = item.access_type
-	sendText(message, path, item.source.character.name, item.source.channel.name)
+#def reply(message, item, path_override=None):
+#	if not hasattr(item, 'access_type'): item.access_type = 0
+#	if path_override is not None: path = path_override
+#	else: path = item.access_type
+#	sendText(message, path, item.source.character.name, item.source.channel.name)
 	
 def saveChannelSettings():
 	chans = {}
@@ -237,14 +250,14 @@ def getUser(user):
 	if user in datapipe.usersDict.keys():
 		return datapipe.usersDict[user]
 	else:
-		xuser = User(user)
-		datapipe.usersDict[user]=xuser
-		return xuser
+		_user = User(user)
+		datapipe.usersDict[user]=_user
+		return _user
 	
 def getChannel(channel):
 	if isinstance(channel, Channel): return channel
 	if isinstance(channel, User):
-		print "{} is actually a User instance; this is what's been messing up your channelDict.".format(channel)
+		print "{} is actually User instance".format(channel)
 		return None
 	for x in datapipe.channelDict.values():
 		if (x.key == channel) or (x.name == channel): 
@@ -252,7 +265,8 @@ def getChannel(channel):
 	chan = Channel(channel)
 	datapipe.channelDict[channel]=chan
 	return chan
-		
+
+#bind to datapipe for easy access	
 datapipe.getUser = getUser
 datapipe.getChannel = getChannel
 	
@@ -321,6 +335,12 @@ class Message():
 		else:
 			del self.msg_data
 			
+	def reply(self, message, path_override=None):
+		if not hasattr(self, 'access_type'): self.access_type = 0
+		if path_override is not None: path = path_override
+		else: path = self.access_type
+		sendText(message, path, self.source.character.name, self.source.channel.name)
+			
 def load(self):
 	names=[]
 	print("Loading plugins. Please stand by.")
@@ -361,17 +381,11 @@ def getMod(chan):
 	xadmins = filter(lambda x: x in chan.users and x!=config.character and x not in chan.ignoreops, chan.ops)
 	xadmins = sorted(map(getUser, xadmins), key=lambda *args: random.random())
 	yadmins = filter(lambda x: x.status not in ["busy", "dnd"], xadmins)
-	try:
-		return yadmins[0]
-	except IndexError:
-		return None
+	try: return yadmins[0]
+	except IndexError: return None
 		
-def checkAge(char, chan):
-	#keeps passing despite a FALSE. Why is the bool wrong??
-	# 02/25/14 11:39:38 -- (Coaches, Sweat and Muscles) User Joel Montgomery has joined 'Coaches, Sweat and Muscles'.
-	# (15, <type 'int'>, 18, <type 'int'>, False)
-	# 02/25/14 11:39:39 -- (System) User Joel Montgomery has passed inspection for Coaches, Sweat and Muscles (Age>=18), claiming to be 15 years old.
-	# assert type(char.age)==int
+def checkAge(age, char, chan):
+	print age, char, chan
 	if(char.name in chan.whitelist): 
 		print ("\t{} is a whitelisted user for {}".format(char.name, chan.name))
 		chan.userJoined(char.name)
@@ -395,6 +409,7 @@ def checkAge(char, chan):
 				return	
 			else:
 				utils.log("User {} under minimum age {} for {}.".format(char.name, chan.minage, chan.name), 3, chan.name)
+				utils.log("User {} under minimum age {} for {}.".format(char.name, chan.minage, chan.name), 3, "Underage")
 				try:
 					banter = eval(random.choice(banBanter))
 					banter = char.name+": "+banter
@@ -433,8 +448,8 @@ class FListProtocol(WebSocketClientProtocol):
 		message = Message(msg)
 		recvQueue.append((message, self))
 		
-	def reply(self, message, item, path_override=None):
-		reply(message, item, path_override)
+	#def reply(self, message, item, path_override=None):
+	#	reply(message, item, path_override)
 		
 	def writeLog(self, text):
 		utils.log(text, 1)
@@ -469,7 +484,7 @@ class FListProtocol(WebSocketClientProtocol):
 		utils.log("{} was kicked from {} by {}".format(item.args['character'], chan, item.args['operator']), 3, chan)
 		if config.banter and random.random<=config.banterchance:
 			a = eval(random.choice(banBanter))
-			reply(a, item, 2)
+			item.reply(a, 2)
 	
 	def COA(self, item):
 		chan = getChannel(item.args['channel'])
@@ -480,10 +495,10 @@ class FListProtocol(WebSocketClientProtocol):
 	def COL(self, item):
 		ops = item.args['oplist']
 		chan = getChannel(item.args['channel'])
+		chan.ops = []
 		for op in ops:
-			if not op in chan.ops: 
-				chan.ops.append(op)
-				chanAdmins.append(op)
+			chan.ops.append(op)
+			chanAdmins.append(op)
 		chan.ops.sort()
 		print ("Channel operators for "+chan.name+": "+ ", ".join(chan.ops)+"\n")
 		
@@ -501,7 +516,7 @@ class FListProtocol(WebSocketClientProtocol):
 			traceback.print_exc()
 		
 	def ERR(self, item):
-		utils.log("FList Error: Code {}. '{}'".format(item.args['number'], item.args['message']), 2)
+		utils.log("FList Error, Code {}. '{}'".format(item.args['number'], item.args['message']), 2)
 			
 	def FLN(self, item):
 		char = getUser(item.args['character'])
@@ -541,10 +556,9 @@ class FListProtocol(WebSocketClientProtocol):
 			chan.kick(char)
 			return
 		if chan.minage == 0: return
-		try: assert char.age
-		except AssertionError: pass
-		checkAge(char, chan)
-						
+		age = char.age
+		age.addCallback(checkAge, char, chan)
+
 	def LCH(self, item):
 		chan = getChannel(item.args['channel'])
 		if chan.index==None: return
@@ -617,22 +631,22 @@ class FListProtocol(WebSocketClientProtocol):
 #===========================================
 
 	def listIndices(self, item):
-		reply("List of active channels and their indices for channel-specific commands:", item, 0)
+		item.reply("List of active channels and their indices for channel-specific commands:", 0)
 		for num, chan in enumerate(datapipe.channels):
 			if num==0: continue
 			if chan == None: continue
-			reply("Index #{}: [session={}]{}[/session]".format(num, chan.name, chan.key), item, 0)
+			item.reply("Index #{}: [session={}]{}[/session]".format(num, chan.name, chan.key), 0)
 			
 	def whitelist(self, item):
 		candidate = item.params
 		# datapipe.whitelist.append(candidate)
 		if not candidate in item.source.channel.whitelist: 
 			item.source.channel.whitelist.append(candidate)
-			reply("{} has been whitelisted for {}.".format(candidate, item.source.channel.name), item)	
+			item.reply("{} has been whitelisted for {}.".format(candidate, item.source.channel.name))	
 			utils.log("{} has been whitelisted for {} by {} (level {} access).".format(candidate, item.source.channel.name, item.source.character.name, item.cf_level), 1)
 		else:
 			item.source.channel.whitelist.remove(candidate)
-			reply("{} has been removed from the whitelist for {}.".format(candidate, item.source.channel.name), item)	
+			item.reply("{} has been removed from the whitelist for {}.".format(candidate, item.source.channel.name))	
 			utils.log("{} removed from whitelist for {} by {} (level {} access).".format(candidate, item.source.channel.name, item.source.character.name, item.cf_level), 1)
 		saveChannelSettings()
 		#utils.saveData(datapipe.whitelist, 'whitelist')
@@ -641,30 +655,30 @@ class FListProtocol(WebSocketClientProtocol):
 		# candidate = item.params
 		# datapipe.blacklist.append(candidate)
 		# item.source.channel.blacklist.append(candidate)
-		# reply("{} has been blacklisted for {}.".format(candidate, item.source.channel.name), item)
+		# item.reply("{} has been blacklisted for {}.".format(candidate, item.source.channel.name), item)
 		# utils.log("{} has been blacklisted for {} by {} (level {} access).".format(candidate, item.source.channel.name, item.source.character.name, item.cf_level), 1)
 		# saveChannelSettings()
 		
 	def auth(self, item):
 		if md5(item.params).hexdigest() == config.masterkey:
-			reply("Was ki ra hyma yor, futare ANSUL_{}".format(config.character.upper()), item, 0)
+			item.reply("Was ki ra hyma yor, futare ANSUL_{}".format(config.character.upper()), item, 0)
 			datapipe.Aurica = item.source.character.name
 		
 	def _admin(self, item):
 		if datapipe.Aurica:
 			config.admins.append(datapipe.Aurica)
-			reply("Was yea ra chmod b111111111/n => zuieg {}_ANSUL_{}".format(item.source.character.name.upper(), config.character.upper()), item)
+			item.reply("Was yea ra chmod b111111111/n => zuieg {}_ANSUL_{}".format(item.source.character.name.upper(), config.character.upper()))
 			datapipe.Aurica = ""
 		else:
-			reply("", item)
+			item.reply("")
 
 	def op(self, item):
 		candidate = item.params
 		chan = item.source.channel
 		if not candidate in chan.ops: chan.ops.append(candidate)
 		if not candidate in chanAdmins: chanAdmins.append(candidate)
-		reply("{} has been made a bot operator for {}.".format(candidate, item.source.channel.name), item)
-		utils.log("{} has been a bot operator for {} by {} (level {} access).".format(candidate, chan.name, item.source.character.name, item.cf_level), 1)
+		item.reply("{} promoted to bot operator for {}.".format(candidate, item.source.channel.name))
+		utils.log("{} has been made bot operator for {} by {} (level {} access).".format(candidate, chan.name, item.source.character.name, item.cf_level), 1)
 		
 	def deop(self, item):
 		candidate = item.params
@@ -672,33 +686,33 @@ class FListProtocol(WebSocketClientProtocol):
 		try:
 			chanAdmins.remove(candidate)
 			chan.ops.remove(candidate)
-			reply("{} is no longer a bot operator for {}.".format(candidate, item.source.channel.name), item)
+			item.reply("{} is no longer a bot operator for {}.".format(candidate, item.source.channel.name))
 			utils.log("{} has is no longer a bot operator for {} by order of {} (level {} access).".format(candidate, item.source.channel.name, item.source.character.name, item.cf_level), 1)
 		except IndexError:
-			reply("[color=red][b]Error:[/b][/color] {} was not found in the bot operator registry for {}. Please check spelling and capitalization.".format(candidate, item.source.channel.name), item)
+			item.reply("[color=red][b]Error:[/b][/color] {} was not found in the bot operator registry for {}. Please check spelling and capitalization.".format(candidate, item.source.channel.name))
 				
 	def join(self, item):
 		chan = getChannel(item.params)
-		reply("Command received. Attempting to join '{}'".format(chan.name), item, 0)
+		item.reply("Command received. Attempting to join '{}'".format(chan.name), 0)
 		utils.log("Joining channel '{}' by order of {} (level {} access).".format(chan.name, item.source.character.name, item.cf_level), 1)
 		chan.join()
 	
 	def leave(self, item):
 		chan = item.source.channel
-		reply("Command received. Leaving '{}'".format(chan.name), item, 0)
+		item.reply("Command received. Leaving '{}'".format(chan.name), 0)
 		utils.log("Leaving channel '{}' by order of {} (level {} access).".format(chan.name, item.source.character.name, item.cf_level), 1)
 		chan.part()
 	
 	def kick(self, item):
 		char = item.params
 		sendRaw("CKU {}".format(json.dumps({'channel': item.source.channel.key, 'character': char})))
-		reply("Command received. Removing '{}' from {}.".format(character, source.channel), item, 0)
+		item.reply("Command received. Removing '{}' from {}.".format(character, source.channel), 0)
 		utils.log("{} (level {} access) has kicked user {} from {}.".format(item.source.character.name, item.cf_level, char, item.source.channel.name), 3, chan.name)
 	
 	def ban(self, item):
 		char = item.params	
 		sendRaw("CBU {}".format(json.dumps({'channel': item.source.channel.key, 'character': char})))
-		reply("Command received. Banning '{}' from {}.".format(character, source.channel), item, 0)
+		item.reply("Command received. Banning '{}' from {}.".format(character, source.channel), 0)
 		#item.source.channel.blacklist.append(char)
 		utils.log("{} (level {} access) has banned {} from {}.".format(item.source.character.name, item.cf_level, char, item.source.channel.name), 3, chan.name)
 		
@@ -710,13 +724,13 @@ class FListProtocol(WebSocketClientProtocol):
 		#try:
 			#item.source.channel.blacklist.remove(item.params)
 		#except IndexError:
-			#reply("Character '{}' not in Blacklist for {}. Please check channel, check spelling, and retry.".format(item.params, item.source.channel.name), item)
+			#item.reply("Character '{}' not in Blacklist for {}. Please check channel, check spelling, and retry.".format(item.params, item.source.channel.name))
 		#else:
-			#reply("Character '{}' removed from blacklist for {}.".format(item.params, item.source.channel.name), item)
+			#item.reply("Character '{}' removed from blacklist for {}.".format(item.params, item.source.channel.name))
 			#utils.log("{} removed from blacklist for {} by {} (level {} access)".format(item.params, item.source.channel.name, item.source.character.name, item.cf_level), 1, item.source.channel.name)
 			
 	def exec_purger(self, item):
-		reply("Rrha yea ra EXEC_PURGER >> {}_ANSUL_{}".format(item.source.character.name.upper(), config.character.upper()), item)
+		item.reply("Rrha yea ra EXEC_PURGER >> {}_ANSUL_{}".format(item.source.character.name.upper(), config.character.upper()))
 		EventQueue.append((item.source.character.name, 'Was ki ra exec syec parge ', 'kick'))
 		
 	def method_metafalica(self, item):
@@ -724,7 +738,7 @@ class FListProtocol(WebSocketClientProtocol):
 		sendRaw("CCR {}".format(json.dumps({'channel':newchannel})))
 	
 	def _method_metafalica(self, item):
-		reply("Was ki ga exec hymme METAFALICA reta tie manac dor.", item)
+		item.reply("Was ki ga exec hymme METAFALICA reta tie manac dor.")
 		EventQueue.append((item.source.character.name, 'exec hymme METAFALICA ', 'method_metafalica'))
 	
 #	def kickban(self, character, channel=source.channel):
@@ -735,13 +749,13 @@ class FListProtocol(WebSocketClientProtocol):
 	def timeout(self, item):
 		try: length = int(item.args[-1:])
 		except ValueError: 
-			reply("Could not parse parameter 'length'. I'll just use 10 minutes.", item, 0)
+			item.reply("Could not parse parameter 'length'. I'll just use 10 minutes.", 0)
 			length = 10
 		except IndexError:
 			length = 10
 		#fix that
 		character = " ".join(item.args[:-1])
-		reply("{} (level {} access) made {} timeout from '{}' for {} minutes.".format(character, item.cf_level, item.source.channel.name, length), item, 0)
+		item.reply("{} (level {} access) made {} timeout from '{}' for {} minutes.".format(character, item.cf_level, item.source.channel.name, length), 0)
 		sendRaw("CKU {}".format(json.dumps({"channel":item.source.channel.key, "character":character, "length":length})))
 		
 	def lastJoined(self, item):
@@ -749,7 +763,7 @@ class FListProtocol(WebSocketClientProtocol):
 		last = channel.lastjoined
 		users = []
 		if len(last) == 0:
-			reply("No new data available.", item, 0)
+			item.reply("No new data available.", 0)
 			return
 		try: 
 			numUsers = int(item.args[0])
@@ -759,17 +773,17 @@ class FListProtocol(WebSocketClientProtocol):
 		for x in last:
 			users.append("[user]{}[/user]".format(x))
 		
-		reply("The following {} users (out of a maximum {}) recently joined '{}': {}".format(numUsers, len(channel.lastjoined), channel.name, " ".join(users)), item, 0)
+		item.reply("The following {} users (out of a maximum {}) recently joined '{}': {}".format(numUsers, len(channel.lastjoined), channel.name, " ".join(users)), 0)
 		channel.lastjoined=channel.lastjoined[numUsers:]
 			
 	def ignore(self, item):
 		if not item.source.character.name in item.source.chan.ignoreops:
 			item.source.chan.ignoreops.append(item.source.character.name)
-			reply("You have been appended to the ignore list for {} and will no longer be pinged when AgeCheck is active.".format(item.source.channel.name), item)
+			item.reply("You have been appended to the ignore list for {} and will no longer be pinged when AgeCheck is active.".format(item.source.channel.name))
 			utils.log("{} opted to be ignored in {}".format(item.source.character.name, item.source.channel.name), 1)
 		else:
 			item.source.chan.ignoreops.remove(item.source.character.name)
-			reply("You have been removed from the ignore list for {}.".format(item.source.channel.name), item)
+			item.reply("You have been removed from the ignore list for {}.".format(item.source.channel.name))
 			utils.log("{} opted to no longer be ignored in {}".format(item.source.character.name, item.source.channel.name), 1)
 			
 	def minage(self, item):
@@ -777,19 +791,19 @@ class FListProtocol(WebSocketClientProtocol):
 			age = int(item.args[0])
 			item.source.channel.minage = age
 			if age == 0:
-				reply("Age Check deactivated by {} (level {} access).".format(item.source.character.name), item)
+				item.reply("Age Check deactivated by {} (level {} access).".format(item.source.character.name))
 				return
-			reply("Age Check activated by {}. Alerting administrators to characters below age {}.".format(item.source.character.name, personality.spokenNumber(age)), item)
+			item.reply("Age Check activated by {}. Alerting administrators to characters below age {}.".format(item.source.character.name, personality.spokenNumber(age).lower()))
 			utils.log("{} set the minimum age for {} to {}.".format(item.source.character.name, item.source.channel.name, age), 3, item.source.channel.name)
 		except ValueError:
-			reply("Error: Cannot parse {} as a number.".format(item.args[0]), item, 0)
+			item.reply("Error: Cannot parse {} as a number.".format(item.args[0]), 0)
 		else:
 			saveChannelSettings()
 			
 	def alertUnderAge(self, item):
 		try:
 			item.source.channel.alertUnderage = not item.source.channel.alertUnderage
-			reply("Alerts for underage characters are {}. Moderators will{} be alerted to underage characters.".format(['off', 'on'][item.source.channel.alertUnderage], ' not'*(not item.source.channel.alertUnderage)), item)
+			item.reply("Alerts for underage characters are {}. Moderators will{} be alerted to underage characters.".format(['off', 'on'][item.source.channel.alertUnderage], ' not'*(not item.source.channel.alertUnderage)))
 			utils.log("{} set the underage alert for {} to '{}'.".format(item.source.character.name, item.source.channel.name, item.source.channel.alertUnderage), 3, item.source.channel.name)
 		except:
 			traceback.print_exc()
@@ -798,12 +812,12 @@ class FListProtocol(WebSocketClientProtocol):
 			
 	def alertNoAge(self, item):
 		item.source.channel.alertNoAge = not item.source.channel.alertNoAge
-		reply("Alerts for characters with no age listed are {}. Moderators will{} be alerted to such characters.".format(['off', 'on'][item.source.channel.alertNoAge], ' not'*(not item.source.channel.alertNoAge)), item)
+		item.reply("Alerts for characters with no age listed are {}. Moderators will{} be alerted to such characters.".format(['off', 'on'][item.source.channel.alertNoAge], ' not'*(not item.source.channel.alertNoAge)))
 		utils.log("{} set the mod alert for {} to '{}'.".format(item.source.character.name, item.source.channel.name, item.source.channel.alertNoAge), 3, item.source.channel.name)
 		saveChannelSettings()
 		
 	def bingo(self, item):
-		reply("[url=http://i.imgur.com/fUHxLPQ.png]Collect your FList Bingo Card here.[/url]", item)
+		item.reply("[url=http://i.imgur.com/fUHxLPQ.png]Collect your FList Bingo Card here.[/url]")
 		
 	def rainbowText(self, item):
 		slist=[]
@@ -821,11 +835,11 @@ class FListProtocol(WebSocketClientProtocol):
 	def lockdown(self, item):
 		datapipe.Despedia = not datapipe.Despedia
 		utils.log("Lockdown {} by {} (level {} access). None but hardcoded administrators may issue commands until lifted.".format(['disengaged', 'engaged'][datapipe.Despedia], item.source.character.name, item.cf_level), 1)
-		reply("Lockdown {} by {} (level {} access). None but hardcoded administrators may issue commands until lifted.".format(['disengaged', 'engaged'][datapipe.Despedia], item.source.character.name, item.cf_level), item, 2)
+		item.reply("Lockdown {} by {} (level {} access). None but hardcoded administrators may issue commands until lifted.".format(['disengaged', 'engaged'][datapipe.Despedia], item.source.character.name, item.cf_level), 2)
 		
 	def hibernation(self, item):
 		try:
-			reply("Command accepted. Shutting down.", item, 2)
+			item.reply("Command accepted. Shutting down.", 2)
 			utils.log('Shutting down by order of {} (level {} access). Stopping reactor and writing data.'.format(item.source.character.name, item.cf_level), 1)
 			reactor.stop()
 			chans = {}
@@ -849,27 +863,27 @@ class FListProtocol(WebSocketClientProtocol):
 		try:
 			print msg.args[0]
 			if msg.args[0]:
-				reply(datapipe.helpDict[msg.args[0]], msg, 0)
+				msg.reply(datapipe.helpDict[msg.args[0]], 0)
 
 		except KeyError:
-			reply("No entry for command '{}'. Please check your syntax and try again.".format(msg.args[1]) , 0)
+			msg.reply("No entry for command '{}'. Please check your syntax and try again.".format(msg.args[1]), 0)
 			
 		except IndexError:	
-			reply("{} F-List Bot, v{}.".format(config.character, config.version), msg, 0)
-			reply("Please note: All commands are executed in the channel they are received from. In case of a PM, you may specify a channel via its ID number. E.g. .kick A Bad Roleplayer 1 will kick A Bad RolePlayer from channel #1. To get a list of IDs and channels, use the command '.lc'. A command without an ID will be parsed as the 'default' channel, here: {}".format(config.channels[0]), msg, 0)
-			reply("The following functions are available:", msg, 0)
+			msg.reply("{} F-List Bot, v{}.".format(config.character, config.version), 0)
+			msg.reply("Please note: All commands are executed in the channel they are received from. In case of a PM, you may specify a channel via its ID number. E.g. .kick A Bad Roleplayer 1 will kick A Bad RolePlayer from channel #1. To get a list of IDs and channels, use the command '.lc'. A command without an ID will be parsed as the 'default' channel, here: {}".format(config.channels[0]), 0)
+			msg.reply("The following functions are available:", 0)
 			func=[]
 			for x in datapipe.helpDict.keys():
 				func.append(x)
 			func.sort()
 			for x in func:
-				reply("--{}: {!s}".format(x, datapipe.helpDict[x]), msg, 0)
+				msg.reply("--{}: {!s}".format(x, datapipe.helpDict[x]), 0)
 
 	def tell(self, msg):
 		sender = msg.source.character.name
 		a = msg.params.find(':')
 		if a ==-1:
-			reply("You need to put a ':' after the recipient's name, darling.", msg, 1)
+			msg.reply("You need to put a ':' after the recipient's name, darling.", 1)
 			return
 		sender = msg.source.character.name
 		recipient = msg.params[:a]
@@ -884,13 +898,13 @@ class FListProtocol(WebSocketClientProtocol):
 		except KeyError:
 			messages = []
 		if len(messages)>config.messagelimit:
-			reply("[color=green]{} already has {} messages waiting. Message not added.[/color]".format(recipient, personality.spokenNumber(config.messagelimit)), msg, 2)
+			msg.reply("[color=green]{} already has {} messages waiting. Message not added.[/color]".format(recipient, personality.spokenNumber(config.messagelimit)), 2)
 			return
 		else:	
 			messages.append(data)
 			datapipe.messageDict[recipient.lower()]=messages
 			utils.saveData(datapipe.messageDict, '{} messages'.format(config.character))
-			reply("[color=green]Message to {} saved.[/color]".format(recipient), msg, 2)
+			msg.reply("[color=green]Message to {} saved.[/color]".format(recipient), 2)
 						
 	def say(self, msg):
 		sendText(msg.params, 2, chan=msg.source.channel)
@@ -898,53 +912,41 @@ class FListProtocol(WebSocketClientProtocol):
 	def act(self, msg):
 		sendText(msg.params, 3, chan=msg.source.channel)
 		
-	def infodump(self, msg):
+	def debug(self, msg):
 		#debug command, print __attributes__ or other metadata. get object with __getattr__ and disassemble.
-		pass
+		char,attr = msg.params.split(",")
+		char=getUser(char)
+		_attr = getattr(char, attr)
+		_attr.addCallback(lambda x: "{}'s {} is {} ({}).".format(char.name, attr.lower(), x, type(x))) 
+		_attr.addCallback(msg.reply)
 		
-	def scan(self, msg):
-		numeric = False
-		stats = False
-		anon = False
-		if "-n" in msg.args:
-			numeric=True
-			msg.args.remove('-n')
-			msg.params=" ".join(msg.args)
-		if "-s" in msg.args:
-			stats=True
-			msg.args.remove('-s')
-			msg.params=" ".join(msg.args)
-		if "-a" in msg.args:
-			anon=True
-			msg.args.remove('-a')
-			msg.params=" ".join(msg.args)		
-		msg.params = msg.params.lower()
-		print("\tEngaging data gathering subroutines. Please stand by.")
-		users=map(getUser, msg.source.channel.users)
-		assocData = map(lambda x: (User.__getattr__(x, msg.params), x.name), users)
-		oldDataLen=len(assocData)
+	def analyze(self, assocData, usrData, msg):
+		assocData = map(lambda x: x[1], assocData)
 		print("\tProcessing {} entries...".format(len(assocData)))
-		data=map(lambda x: x[0], assocData)
-		if numeric: 
+		oldDataLen=len(assocData)
+		data=assocData
+		if self.numeric: 
 			_data = []
 			for index, item in enumerate(assocData):
-				n=item[0]
+				n=item
 				try:
-					if type(item[0])==int: n=str(n)
+					if type(item)==int: n=str(n)
 					n=re.sub(',\'', '\.', n)
 				except:
-					print("Error with data point {} from user {}. Is it an infinity sign again? Uuuugh.".format(item[0], item[1]))
+					print("Error with data point {} from user {}. Is it an infinity sign again? Uuuugh.".format(item, usrData[index]))
 				try:
 					n=float(re.search('\d{1,5}\.?\d{0,2}', n).group(0))
 					if not n==0: 
-						_data.append((n, item[1]))		
+						_data.append((n, usrData[index]))		
 				except:pass
 			assocData = dict(_data)
+			#necessary?
 			data=map(lambda x: x[0], _data)
 		print("\tData processing complete. {} entries now available.".format(len(data)))
 		if len(data)==0: return
+		
 		print("\tBeginning analysis.")
-		if not stats:	
+		if not self.stats:	
 			permutations = set(data)
 			results = []
 			total = 0.0
@@ -962,11 +964,39 @@ class FListProtocol(WebSocketClientProtocol):
 			dataStDev=reduce(lambda x,y: x+y, dataStDev, 0.0)
 			dataStDev=round(math.sqrt(dataStDev/len(data)), 2)
 			dataMedian=sorted(data)[len(data)//2]
-			analysis = "Mean: {:.2f}\tMedian: {:.2f}\tMaximum: {:.2f}{}\tMinimum: {:.2f}{}\tStandard Deviation: {:.3f}\tTotal: {:.2f}. (Only nonzero entries were counted).".format(dataAvg, dataMedian, max(data), ['', ' ({})'.format(assocData[max(data)])][anon], min(data), ['', ' ({})'.format(assocData[min(data)])][anon], dataStDev, dataTotal)
+			analysis = "Mean: {:.2f}\tMedian: {:.2f}\tMaximum: {:.2f}{}\tMinimum: {:.2f}{}\tStandard Deviation: {:.3f}\tTotal: {:.2f}. (Only nonzero entries were counted).".format(dataAvg, dataMedian, max(data), ['', ' ({})'.format(assocData[max(data)])][self.anon], min(data), ['', ' ({})'.format(assocData[min(data)])][self.anon], dataStDev, dataTotal)
 		analysis = "Search of users for '{}' complete. {} of {} entries could be processed.\n{}".format(msg.params, len(data), oldDataLen, analysis)
-		print analysis
-		reply(analysis, msg)
+		print("Returning analysis: "+analysis)
+		return analysis
 		
+	def _print(self, msg):
+		print msg
+		return msg
+	
+	def scan(self, msg):
+		self.numeric = False
+		self.stats = False
+		self.anon = False
+		if "-n" in msg.args:
+			self.numeric=True
+			msg.args.remove('-n')
+			msg.params=" ".join(msg.args)
+		if "-s" in msg.args:
+			self.stats=True
+			msg.args.remove('-s')
+			msg.params=" ".join(msg.args)
+		if "-a" in msg.args:
+			self.anon=True
+			msg.args.remove('-a')
+			msg.params=" ".join(msg.args)		
+		msg.params = msg.params.lower()
+		
+		print("\tEngaging data gathering subroutines. Please stand by.")
+		users=map(getUser, msg.source.channel.users)
+		usrData = map(lambda x: x.name, users)
+		numData = defer.DeferredList(map(lambda x: User.__getattr__(x, msg.params), users))
+		numData.addCallback(self.analyze, usrData, msg)
+		numData.addCallback(msg.reply)
 		
 	def persTest(self, item):
 		item.args = map(lambda x: str(x), item.args)
@@ -975,15 +1005,16 @@ class FListProtocol(WebSocketClientProtocol):
 			print func
 			try:
 				res = func(*item.args[1:])
-				reply(res, item)
+				item.reply(res)
 			except Exception as e:
-				reply(e, item)
+				item.reply(e)
 				
 	def sn(self, item):
 		numbers=personality.spokenNumber(str(item.params))
-		reply(numbers, item)
+		item.reply(numbers)
 		
 def parseText(self, msg):
+	msg.params = msg.params.encode('utf-8', errors='replace')
 	if msg.params[:5]==".auth": utils.log("root-level login attempt by {}".format(msg.source.character.name), 0)
 	elif not msg.params[:3]=="/me":utils.log("{}: \"{}\"".format(msg.source.character.name, msg.params), 3, msg.source.channel.name)
 	else: utils.log("{}{}".format(msg.source.character.name, msg.params[3:]), 3, msg.source.channel.name)
@@ -1004,7 +1035,7 @@ def parseText(self, msg):
 		# END SUPER EXPERIMENTAL
 	try:
 		if datapipe.Despedia and msg.source.character.name not in config.admins: return
-		if msg.args[0] in datapipe.functions.keys():
+		if msg.args[0].lower() in datapipe.functions.keys():
 			func = msg.args[0]
 			msg.args = msg.args[1:]
 			msg.params = " ".join(msg.args)
@@ -1022,7 +1053,7 @@ def parseText(self, msg):
 						print("\tIndex found. Rerouting PM command '{}' from channel 'PM' into '{}'.".format(func, chan.name))
 						msg.source.channel = chan
 					except IndexError:
-						reply("Command not executed: There is no channel with index {}. There are {} channels registered. To see the list, message me with '.lc'.".format(index, len(datapipe.channels)), msg)	
+						msg.reply("Command not executed: There is no channel with index {}. There are {} channels registered. To see the list, message me with '.lc'.".format(index, len(datapipe.channels)))	
 
 			else: 
 				msg.access_type = 1
@@ -1039,7 +1070,7 @@ def parseText(self, msg):
 					handle_all_the_things(self, msg, func_params[0])
 					return
 				else:
-					reply("You do not have the necessary permissions to execute function '{}' in channel '{}'.".format(func_params[0], msg.source.channel.name), msg)
+					msg.reply("You do not have the necessary permissions to execute function '{}' in channel '{}'.".format(func_params[0], msg.source.channel.name))
 					return
 	except IndexError:
 		traceback.print_exc()
@@ -1091,14 +1122,14 @@ def handle_all_the_things(self, msgobj, cmd=None):
 	else:
 		#needs to be selective to user commands, not FListCommands shit. :/
 		if config.banter and (cmd in config.functions.keys()) and (random.random>config.banterchance):
-			reply(eval(random.choice(funcBanter)), msgobj)
+			msgobj.reply(eval(random.choice(funcBanter)))
 	
 def listen(msg, songinst):
 	print("\tListening to {}; limit {}".format(songinst.song, songinst.level))
 	try:
 		songinst.nextline = songinst.songiterator.next()
 	except StopIteration:
-		reply("Song rejected.", 0)
+		msg.reply("Song rejected.", 0)
 		datapipe.songs.remove(songinst)
 		return
 	
@@ -1107,7 +1138,7 @@ def listen(msg, songinst):
 		if songinst.song in songs.dict_answers:
 			try:
 				sreply = songs.dict_answers[songinst.song][songinst.level]
-				reply(str(sreply), msg, 2)
+				msg.reply(str(sreply), 2)
 			except KeyError, IndexError:
 				pass
 	
@@ -1116,7 +1147,7 @@ def listen(msg, songinst):
 	
 	else:
 		print("No match, no endline.")
-		reply("Access denied", msg)
+		msg.reply("Access denied")
 		datapipe.songs.remove(songinst)
 		
 	if songinst.level >= songinst.maxLevel:
@@ -1168,7 +1199,7 @@ def mainloop():
 
 if __name__ == '__main__':
 	load(datapipe)
-	datapipe.personality = personality.__init__(config)
+	#datapipe.personality = personality.__init__(config)
 	factory = WebSocketClientFactory("ws://chat.f-list.net:{}".format(config.port), debug = True)
 	factory.protocol = FListProtocol
 	EternalSender = task.LoopingCall(qsend)

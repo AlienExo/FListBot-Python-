@@ -1,4 +1,4 @@
-#1dbdc6da34094db4e661ed43aac83d91
+##1dbdc6da34094db4e661ed43aac83d91
 import traceback
 import random
 deck= 	{	"[The Fool]":(			"The infinite lies within the simple, just as the simple lies within the infinite.", "The Fool is the spirit in search of experience. He represents the mystical cleverness bereft of reason within us, the childlike ability to tune into the inner workings of the world. ", "protagonist of a story - path through life - journey - Joker's Wild", 't0'), 
