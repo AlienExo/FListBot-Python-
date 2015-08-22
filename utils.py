@@ -1,4 +1,4 @@
-from __future__ import unicode_literals
+#from __future__ import unicode_literals
 import config
 import datetime
 import json
@@ -7,16 +7,19 @@ import urllib2
 import time
 import traceback
 import yaml
+import re
 
 def log(text, ltype=0, channel="System"):
 	"""Merely dresses up text with a timestamp and prints it (ltype 0), writes to '<BOT> events.log' (ltype 1), or '<BOT> errors.log' (ltype 2), or '<BOT> conversation.log'(type 3)"""
-	text=text.encode('ascii', 'replace')
+	try:
+		text=text.encode('utf-8', 'ignore')
+	except:
+		print("Illegal character in string: "+text)
 	files=['', ' events', ' errors', channel]
 	print("{} -- ({}) {}".format(time.strftime("%c"), channel, text))
 	text="{} -- {}".format(time.strftime("%c"), text)
 	if ltype==0: return
-	channel=channel.replace("/", " ")
-	channel=channel.replace("\\", " ")
+	channel = re.sub("[^A-Za-z0-9-_]", "_", channel)
 	text=text.encode('ascii', 'replace')
 	try:
 		with open('./logs/{} ({}).log'.format(config.character, channel, files[ltype]), 'a') as io:

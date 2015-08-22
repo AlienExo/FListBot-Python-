@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 import traceback
 import urllib2
+import urlparse
 import re
 import json
 
@@ -25,30 +26,23 @@ def lencalc(i):
 		
 	s=":".join(results)
 	return s
-
+	
 def loop(self, msg):
 	a = yt_re.search(msg.params)
 	if a:
 		if a.group(1) != None: vid=a.group(1) 
 		else: vid=a.group(2)
-		url = "https://gdata.youtube.com/feeds/api/videos/{}?alt=json".format(vid)
+		url = "http://youtube.com/get_video_info?video_id={}".format(vid)
 		response = urllib2.urlopen(url)
-		resp = json.load(response)
+		data = urlparse.parse_qsl(response.read())
 		response.close()
-		data 	= resp['entry']
-		title 	= data['title']['$t']
-		# title 	= title.encode('utf-8', 'replace')
-		views 	= int(data['yt$statistics']['viewCount'])
-		length 	= data['media$group']['media$content'][0]['duration']
+		title = filter(lambda x: x[0]=="title", data)[0][1]
+		uploader = filter(lambda x: x[0]=="author", data)[0][1]
+		length = int(filter(lambda x: x[0]=="length_seconds", data)[0][1])
 		flength = lencalc(length)
-		try:
-			rating 	= int(round(data['gd$rating']['average'], 1))
-			nrating = int(data['gd$rating']['numRaters'])
-		except KeyError:
-			rating = 0
-			nrating = 0
-		# vid = u"[YouTube] [color=green] {!s} :: {!s} :: {!s} :: {!s} Views :: {!s} Ratings[/color]".format(title, flength, u"\u2605"*rating, views, nrating).encode('utf-8', 'replace')
-		vid = u"[color=Black]You[/color]Tube - [color=green]{!s} :: {!s} :: {!s} :: {:,} Views :: {:,} Ratings[/color]".format(title, flength, u"\u2605"*rating, views, nrating)
+		rating = int(float(filter(lambda x: x[0]=="avg_rating", data)[0][1]))
+		# vid = u"[YouTube] [color=green] {!s} ({!s}) :: {!s} :: {!s} :: {!s} Views[/color]".format(title, flength, u"\u2605"*rating, views, nrating).encode('utf-8', 'replace')
+		vid = u"[color=Black]You[/color]Tube - [color=green]{!s} ({!s}) :: {!s} :: {!s}[/color]".format(title, uploader, flength, u"\u2605"*rating)
 		self.reply(vid, msg, 2)
 				
 def test(url):

@@ -73,3 +73,7 @@ def getAge(name, key):
 def getKey():
 	key = json.load(urllib2.urlopen(loginAPI, urlencode({'account': config.account, 'password': config.password})))['ticket']
 	return key
+
+def _getKey():
+	key = json.load(urllib2.urlopen(loginAPI, urlencode({'account': account, 'password': password})))
+	return key

@@ -1,4 +1,4 @@
-#from __future__ import unicode_literals
+from __future__ import unicode_literals
 
 #instead of user.age, attach a .data dict to users and rewrite.
 #getattr lookup -> dict lookup -> FList api -> Second lookup, dict "not set", return "not set"
@@ -10,6 +10,7 @@ from copy import deepcopy
 import datetime
 import FListAPI
 from hashlib import md5
+import HTMLParser
 import importlib
 import json
 import math
@@ -44,6 +45,8 @@ banBanter		= utils.loadData('banbanter', list)
 funcBanter		= utils.loadData('funcbanter', list)
 joinmsgDict 	= utils.loadData('joinmsg', dict)
 server_vars 	= {}
+
+html_parser = HTMLParser.HTMLParser()
 
 class Channel():
 	def __init__(self, name, ckey=None):
@@ -101,6 +104,13 @@ class Channel():
 		self.status = not self.status
 		sendRaw("RST {}".format(json.dumps({'channel':self.key, 'status': ['private', 'public'][self.isPublic]})))
 		reply("Channel '{}' set to '{}'.".format(self.name, ['private', 'public'][self.isPublic]))
+		
+	def getMod(self):
+		xadmins = filter(lambda x: x in self.users and x!=config.character and x not in self.ignoreops, self.ops)
+		xadmins = sorted(map(getUser, xadmins), key=lambda *args: random.random())
+		yadmins = filter(lambda x: x.status not in ["busy", "dnd"], xadmins)
+		try: return yadmins[0]
+		except IndexError: return None
 		
 class User():
 	def __init__(self, name):
@@ -166,7 +176,7 @@ class DataPipe():
 	def __init__(self):
 		self.character		= config.character
 		self.helpDict 		= utils.loadData('help', dict)
-		self.messageDict 	= utils.loadData('{} messages'.format(config.character), dict)
+		self.messageDict 	= utils.loadData('messages', dict)
 		self.functions		= config.functions
 		self.channels		= [Channel('Dummy')]
 		self.channelDict	= utils.loadData('channels', dict)
@@ -254,7 +264,7 @@ def getUser(user):
 		datapipe.usersDict[user]=_user
 		return _user
 	
-def getChannel(channel):
+def getChannel(channel, key=None):
 	if isinstance(channel, Channel): return channel
 	if isinstance(channel, User):
 		print "{} is actually User instance".format(channel)
@@ -262,7 +272,8 @@ def getChannel(channel):
 	for x in datapipe.channelDict.values():
 		if (x.key == channel) or (x.name == channel): 
 			return x
-	chan = Channel(channel)
+	if key: chan = Channel(channel, key)
+	else: chan = Channel(channel)
 	datapipe.channelDict[channel]=chan
 	return chan
 
@@ -377,15 +388,8 @@ def load(self):
 			print("\tPlugin '{}' successfully initialized.".format(name))
 	print("Import complete.\n")
 	
-def getMod(chan):
-	xadmins = filter(lambda x: x in chan.users and x!=config.character and x not in chan.ignoreops, chan.ops)
-	xadmins = sorted(map(getUser, xadmins), key=lambda *args: random.random())
-	yadmins = filter(lambda x: x.status not in ["busy", "dnd"], xadmins)
-	try: return yadmins[0]
-	except IndexError: return None
-		
+
 def checkAge(age, char, chan):
-	print age, char, chan
 	if(char.name in chan.whitelist): 
 		print ("\t{} is a whitelisted user for {}".format(char.name, chan.name))
 		chan.userJoined(char.name)
@@ -402,7 +406,7 @@ def checkAge(age, char, chan):
 			if char.age == 0:
 				print("User {}'s age cannot be parsed.".format(char.name))
 				if chan.alertNoAge:
-					y = getMod(chan)
+					y = chan.getMod()
 					if not isinstance(y, User): raise IndexError
 					utils.log("User {}'s age cannot be parsed. Informing Mod {}".format(char.name, y.name), 3, chan.name)
 					sendText("Can't verify user '[user]{}[/user]' for {} (minimum age set to {}). Please verify. [sub]To add user to the channel's whitelist, reply '.white {} {}' in a PM (or - without the number - in the channel to whitelist for).[/sub]".format(char.name, chan.name, chan.minage, char.name, chan.index), 0, char=y)
@@ -422,7 +426,7 @@ def checkAge(age, char, chan):
 						sendText("Your character {} is under the minimum age of {} for the channel '{}' and has thus been removed. If you wish to return, please do so with an of-age alias. {} wishes you a nice day.".format(char.name, chan.minage, config.character), 0, char)
 						char.kick(chan)
 						return
-					y = getMod(chan)
+					y = chan.getMod()
 					if not isinstance(y, User): raise IndexError
 					utils.log("Alerting {} to underage user {}.".format(y.name, char.name),3, chan.name)
 					sendText("User [color=red]below channel \"{}\"'s minimum age of {}:[/color] [user]{}[/user].".format(chan.name, chan.minage, char.name), 0, char=y)
@@ -440,7 +444,7 @@ class FListProtocol(WebSocketClientProtocol):
 		
 	def onOpen(self):
 		datapipe.key = FListAPI.getKey()
-		reactor.callLater(0.75, sendRaw, "IDN {}".format(json.dumps({"method":"ticket","account":config.account,"character":"Cogito","ticket":datapipe.key,"cname":"cogito","cversion":config.version})))
+		reactor.callLater(0.75, sendRaw, "IDN {}".format(json.dumps({"method":"ticket","account":config.account,"character":config.character,"ticket":datapipe.key,"cname":"cogito","cversion":config.version})))
 
 	def onMessage(self, msg, binary):
 		# msg = msg.decode('ascii', 'ignore')
@@ -475,9 +479,9 @@ class FListProtocol(WebSocketClientProtocol):
 	def CDS(self, item):pass
 	
 	def CIU(self, item):
-		chan = getChannel(item.args['channel'])
-		utils.log("Invited to {}. Joining channel.".format(chan.name), 1)
-		chan.join()
+		_chan = getChannel(item.args['name'])
+		utils.log("Invited to {}. Joining channel.".format(_chan.name), 1)
+		_chan.join()
 	
 	def CKU(self, item):
 		chan = getChannel(item.args['channel']).name
@@ -556,7 +560,7 @@ class FListProtocol(WebSocketClientProtocol):
 			chan.kick(char)
 			return
 		if chan.minage == 0: return
-		age = char.age
+		age = defer.Deferred(char.age)
 		age.addCallback(checkAge, char, chan)
 
 	def LCH(self, item):
@@ -580,7 +584,7 @@ class FListProtocol(WebSocketClientProtocol):
 			print "\nParsing ORS data. Some Assembly Required."
 			data = item.args['channels']
 			for part in data:
-				channel = getChannel(part['title'])
+				channel = getChannel(html_parser.unescape(part['title']))
 				channel.key = part['name']
 			for x in config.channels: 
 				getChannel(x).join()
@@ -692,7 +696,7 @@ class FListProtocol(WebSocketClientProtocol):
 			item.reply("[color=red][b]Error:[/b][/color] {} was not found in the bot operator registry for {}. Please check spelling and capitalization.".format(candidate, item.source.channel.name))
 				
 	def join(self, item):
-		chan = getChannel(item.params)
+		chan = getChannel(html_parser.unescape(item.params))
 		item.reply("Command received. Attempting to join '{}'".format(chan.name), 0)
 		utils.log("Joining channel '{}' by order of {} (level {} access).".format(chan.name, item.source.character.name, item.cf_level), 1)
 		chan.join()
@@ -903,10 +907,11 @@ class FListProtocol(WebSocketClientProtocol):
 		else:	
 			messages.append(data)
 			datapipe.messageDict[recipient.lower()]=messages
-			utils.saveData(datapipe.messageDict, '{} messages'.format(config.character))
+			utils.saveData(datapipe.messageDict, 'messages')
 			msg.reply("[color=green]Message to {} saved.[/color]".format(recipient), 2)
 						
 	def say(self, msg):
+		if len(msg.params)==0: return
 		sendText(msg.params, 2, chan=msg.source.channel)
 		
 	def act(self, msg):
@@ -964,7 +969,7 @@ class FListProtocol(WebSocketClientProtocol):
 			dataStDev=reduce(lambda x,y: x+y, dataStDev, 0.0)
 			dataStDev=round(math.sqrt(dataStDev/len(data)), 2)
 			dataMedian=sorted(data)[len(data)//2]
-			analysis = "Mean: {:.2f}\tMedian: {:.2f}\tMaximum: {:.2f}{}\tMinimum: {:.2f}{}\tStandard Deviation: {:.3f}\tTotal: {:.2f}. (Only nonzero entries were counted).".format(dataAvg, dataMedian, max(data), ['', ' ({})'.format(assocData[max(data)])][self.anon], min(data), ['', ' ({})'.format(assocData[min(data)])][self.anon], dataStDev, dataTotal)
+			analysis = "Maximum: {:.2f}{}\tMinimum: {:.2f}{}\tMean: {:.2f}\tMedian: {:.2f}\tStandard Deviation: {:.3f}\tTotal: {:.2f}. (Only nonzero entries were counted).".format(max(data), ['', ' ({})'.format(assocData[max(data)])][self.anon], min(data), ['', ' ({})'.format(assocData[min(data)])][self.anon], dataAvg, dataMedian, dataStDev, dataTotal)
 		analysis = "Search of users for '{}' complete. {} of {} entries could be processed.\n{}".format(msg.params, len(data), oldDataLen, analysis)
 		print("Returning analysis: "+analysis)
 		return analysis
@@ -1167,7 +1172,7 @@ def _telling(char):
 	except KeyError: return []
 	else:
 		del(datapipe.messageDict[char.name.lower()])
-		utils.saveData(datapipe.messageDict, '{} messages'.format(config.character))
+		utils.saveData(datapipe.messageDict, 'messages')
 		return messages			
 			
 def telling(char, chan):

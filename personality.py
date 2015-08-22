@@ -125,12 +125,32 @@ def timeOfDay():
 	return ["night", "morning", "afternoon", "evening"][datetime.datetime.now().hour//6]
 	
 #---------------------------------------------------------------
-	
+"""	
 class Personality():
 	def __init__(self, code, lines, path, tglobals, config):
 		try:
 			self.configref = config
 			sys.path.append(path)
+			self.code = __import__(code, tglobals)
+			print "\tTesting code execution for personality."
+			if callable(self.code.test): 
+				self.code.test()
+			else: raise ImportError
+			self.lines = utils.loadData(lines, dict, path)
+			
+		except Exception as error:
+			traceback.print_exc()
+			
+		except ImportError:
+			print ("Cannot call self.code.test. Either the .py does not have it or the import went wrong.")
+"""
+
+	
+class Personality():
+	def __init__(self):
+		self.configref = config
+		sys.path.append(path)
+		try:
 			self.code = __import__(code, tglobals)
 			print "\tTesting code execution for personality."
 			if callable(self.code.test): 

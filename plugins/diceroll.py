@@ -1,8 +1,8 @@
-##1dbdc6da34094db4e661ed43aac83d91
+#1dbdc6da34094db4e661ed43aac83d91
 import traceback
 import random
 
-def diceroll(self):
+def diceroll(datapipe, self):
 	try:
 		source = self.source.character
 		b = self.args[0].lower().split("d")
@@ -12,7 +12,7 @@ def diceroll(self):
 			try:
 				DC = int(self.args[2])
 			except:
-				self.say("Cannot roll to DC '{}'. Syntax: '.d <>d<>+<> DC <>'".format(a), 0)
+				self.reply("Cannot roll to DC '{}'. Syntax: '.d <>d<>+<> DC <>'".format(a), 0)
 				return
 		else:
 			dcmode = False
@@ -24,7 +24,7 @@ def diceroll(self):
 		except IndexError:
 			c=[c[0], 0]
 		except ValueError:
-			self.say("Invalid input. (Not a number?)", 0)
+			self.reply("Invalid input. (Not a number?)", 0)
 		if not (b[0]>15) or (c[0]>100) or (c[1]>25):
 			results = []
 			for x in range(b[0]):
@@ -38,12 +38,12 @@ def diceroll(self):
 						dclist.append("Success")
 					else:
 						dclist.append("Failure")
-				self.say("Rolling {}d{}+{}, DC {} => {!s}".format(b[0], c[0], c[1], DC, dclist), 2)
+				self.reply("Rolling {}d{}+{}, DC {} => {!s}".format(b[0], c[0], c[1], DC, dclist))
 		else:
-			self.say("Out of range - only support up to 15d100+25")
+			self.reply("Out of range - only support up to 15d100+25")
 	except Exception as error:
 		self.writeLog("Error in module diceroll: {}".format(error), 3)
-		self.say("There has been an error during diceroll execution. We apologize.", self.access_type)
+		self.reply("There has been an error during diceroll execution. We apologize.", self.access_type)
 		traceback.print_exc()
 
 def __init__(self):

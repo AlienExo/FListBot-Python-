@@ -5,13 +5,13 @@ admins = 	["Exo", "Kalikrates", "Hank Thompson", "Valorin"]
 
 #This is the login infor for the account Cogito runs over.
 account=	"Cogito"
-character=	"Cogito"
+character=	"Bill Cypher"
 password=	"1ChD3Nk34Ls=!"
 
 #For channels, make sure you enter their PRECISE title, including any trailing spaces and/or punctuation! 
 #channels=	['Development']
 #channels=	['Cogito']
-channels=	['Gay/Bi Male Human(oid)s. ', 'Fantastic Gay Beasts And Where To Find Them', 'Manly Males of Extra Manly Manliness']
+channels=	['Gay Human(oids)', 'Fantastic Gay Beasts And Where To Find Them', 'Manly Males of Extra Manly Manliness', '!<<Marvel-Verse>>!']
 
 host=		'chat.f-list.net'
 port=		9722	#9722 - Real | 8722 - Dev
