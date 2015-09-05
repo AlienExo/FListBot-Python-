@@ -1,5 +1,4 @@
 #1dbdc6da34094db4e661ed43aac83d91
-from __future__ import unicode_literals
 import traceback
 import urllib2
 import urlparse
@@ -36,13 +35,13 @@ def loop(self, msg):
 		response = urllib2.urlopen(url)
 		data = urlparse.parse_qsl(response.read())
 		response.close()
-		title = filter(lambda x: x[0]=="title", data)[0][1]
-		uploader = filter(lambda x: x[0]=="author", data)[0][1]
+		title = unicode(filter(lambda x: x[0]=="title", data)[0][1], 'utf-8', 'ignore')
+		uploader = unicode(filter(lambda x: x[0]=="author", data)[0][1], 'utf-8', 'ignore')
 		length = int(filter(lambda x: x[0]=="length_seconds", data)[0][1])
 		flength = lencalc(length)
 		rating = int(float(filter(lambda x: x[0]=="avg_rating", data)[0][1]))
-		# vid = u"[YouTube] [color=green] {!s} ({!s}) :: {!s} :: {!s} :: {!s} Views[/color]".format(title, flength, u"\u2605"*rating, views, nrating).encode('utf-8', 'replace')
-		vid = u"[color=Black]You[/color]Tube - [color=green]{!s} ({!s}) :: {!s} :: {!s}[/color]".format(title, uploader, flength, u"\u2605"*rating)
+		#vid = u"[color=Black]You[/color]Tube - [color=green]{!s} ({!s}) :: {!s} :: {!s}[/color]".format(title, uploader, flength, u"\u2605"*rating)
+		vid = u"[color=Black]You[/color]Tube - [color=green]{!s} ({!s}) :: {!s} :: {!s}[/color]".format(title, uploader, flength, "*"*rating)
 		self.reply(vid, msg, 2)
 				
 def test(url):

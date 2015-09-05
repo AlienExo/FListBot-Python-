@@ -28,7 +28,7 @@
     remind you: History teaches us that users behave wisely once they have exhausted
     all other alternatives.".format(config.character)', '"As a bonus, cogito will
     now use its predictive power to predict your chances of happiness. <{:.4f} msec.
-    Computation aborted.>".format(random.random())', '"{} reminds you: Always were
+    Computation aborted.>".format(random.random())', '"{} reminds you: Always wear
     a condom whilst roleplaying.".format(config.character)', '"{} We put the ''fun''
     in ''No refunds''.".format(config.character)', 'Command aborted: Catastrophic
     succcess.', 'If you find it hard to laugh at yourself, I would be happy to do

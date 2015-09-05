@@ -1,13 +1,12 @@
-from __future__ import unicode_literals
-
 #instead of user.age, attach a .data dict to users and rewrite.
 #getattr lookup -> dict lookup -> FList api -> Second lookup, dict "not set", return "not set"
 #write def get() or something for User
-
+from __future__ import unicode_literals
 from collections import deque
 import config
 from copy import deepcopy
 import datetime
+from difflib import SequenceMatcher as matcher
 import FListAPI
 from hashlib import md5
 import HTMLParser
@@ -198,7 +197,7 @@ class DataPipe():
 		utils.saveData(data, file)
 
 	def reply(self, message, msgobj, path_override=None):
-		print message
+		print message.encode('utf-8', 'replace')
 		msgobj.reply(message, path_override)
 		
 	def writeLog(self, text):
@@ -212,12 +211,12 @@ def sendRaw(msg):
 def sendText(message, route=1, char=config.character, chan='PM'):
 	"""	Route	0			1			2				3				4
 		Target	PM		Channel		Channel+Prefix	Action in MSG	Action in PRI"""
-	message = message.encode('utf-8', errors='replace')
+	message = message.encode('utf-8', 'ignore')
 	char=getUser(char).name
 	if chan=='PM': route=0
 	else: chan=getChannel(chan).key
 	if route == 0:
-		msg = "PRI {}".format(json.dumps({'recipient':char, 'message':message})).encode('utf-8', 'replace')
+		msg = "PRI {}".format(json.dumps({'recipient':char, 'message':message}))#.encode('utf-8', 'replace')
 	elif route<3:
 		prefix = '{}: '.format(char)
 		msg = "{}{}".format(prefix*(route>1), message)
@@ -447,7 +446,7 @@ class FListProtocol(WebSocketClientProtocol):
 		reactor.callLater(0.75, sendRaw, "IDN {}".format(json.dumps({"method":"ticket","account":config.account,"character":config.character,"ticket":datapipe.key,"cname":"cogito","cversion":config.version})))
 
 	def onMessage(self, msg, binary):
-		# msg = msg.decode('ascii', 'ignore')
+		msg = msg.decode('ascii', 'ignore')
 		#if msg[:3] not in ['LIS', 'NLN', 'ORS', 'STA', 'CDS']: print msg
 		message = Message(msg)
 		recvQueue.append((message, self))
@@ -926,6 +925,7 @@ class FListProtocol(WebSocketClientProtocol):
 		_attr.addCallback(msg.reply)
 		
 	def analyze(self, assocData, usrData, msg):
+		print ("Not Anonymous: {}, Numeric: {}, Statistical: {}, Simple: {}".format(self.anon, self.numeric, self.stats, self.simpleCheck))
 		assocData = map(lambda x: x[1], assocData)
 		print("\tProcessing {} entries...".format(len(assocData)))
 		oldDataLen=len(assocData)
@@ -935,6 +935,7 @@ class FListProtocol(WebSocketClientProtocol):
 			for index, item in enumerate(assocData):
 				n=item
 				try:
+					utils.log(n, 3, "Raw Profile Data")
 					if type(item)==int: n=str(n)
 					n=re.sub(',\'', '\.', n)
 				except:
@@ -951,14 +952,36 @@ class FListProtocol(WebSocketClientProtocol):
 		if len(data)==0: return
 		
 		print("\tBeginning analysis.")
+		if self.simpleCheck:
+			if self.numeric:
+				try:
+					filterAmount = float(msg.args[1])
+				except ValueError:
+					print("Could not parse args for filter! " + msg.args)
+					return "ERROR"
+				print filterAmount
+				higher = filter(lambda x: float(x)>= filterAmount, data)
+				lower = filter(lambda x: float(x)< filterAmount, data)
+				print higher
+				print lower
+				return "{} datapoints for query '{}' have value {} or higher; {} are lower. Total: {} datapoints.".format(len(higher), msg.args[0], msg.args[1], len(lower), len(data))
+			else:
+				matches = filter(lambda x: matcher(lambda y: y==" ", x, msg.args[1]).ratio()>0.75, data)
+				print data
+				print msg.args
+				return "{} datapoints for query '{}' match search value '{}'.".format(len(matches), msg.args[0], msg.args[1])
+		
 		if not self.stats:	
 			permutations = set(data)
 			results = []
 			total = 0.0
 			for permutation in permutations:
-				permutationCount = data.count(permutation)
-				results.append((permutationCount, permutation))
-				total += permutationCount
+				try:
+					permutationCount = data.count(permutation)
+					results.append((permutationCount, permutation))
+					total += permutationCount
+				except:
+					continue
 			results.sort(reverse=True)
 			analysis = reduce(lambda x,y: x+"{}: {} occurrences ({:.2%}), ".format(y[1], y[0], y[0]/total), results, "")
 			analysis=analysis.rstrip(', ')
@@ -970,9 +993,7 @@ class FListProtocol(WebSocketClientProtocol):
 			dataStDev=round(math.sqrt(dataStDev/len(data)), 2)
 			dataMedian=sorted(data)[len(data)//2]
 			analysis = "Maximum: {:.2f}{}\tMinimum: {:.2f}{}\tMean: {:.2f}\tMedian: {:.2f}\tStandard Deviation: {:.3f}\tTotal: {:.2f}. (Only nonzero entries were counted).".format(max(data), ['', ' ({})'.format(assocData[max(data)])][self.anon], min(data), ['', ' ({})'.format(assocData[min(data)])][self.anon], dataAvg, dataMedian, dataStDev, dataTotal)
-		analysis = "Search of users for '{}' complete. {} of {} entries could be processed.\n{}".format(msg.params, len(data), oldDataLen, analysis)
-		print("Returning analysis: "+analysis)
-		return analysis
+		return "Search of users for '{}' complete. {} of {} entries could be processed.\n{}".format(msg.params, len(data), oldDataLen, analysis)
 		
 	def _print(self, msg):
 		print msg
@@ -982,6 +1003,7 @@ class FListProtocol(WebSocketClientProtocol):
 		self.numeric = False
 		self.stats = False
 		self.anon = False
+		self.simpleCheck = False
 		if "-n" in msg.args:
 			self.numeric=True
 			msg.args.remove('-n')
@@ -993,13 +1015,19 @@ class FListProtocol(WebSocketClientProtocol):
 		if "-a" in msg.args:
 			self.anon=True
 			msg.args.remove('-a')
-			msg.params=" ".join(msg.args)		
+			msg.params=" ".join(msg.args)
+		if "-p" in msg.args:
+			self.simpleCheck=True
+			msg.args.remove('-p')
+			msg.params=" ".join(msg.args)
+			msg.args = msg.params.split(" ")
 		msg.params = msg.params.lower()
 		
 		print("\tEngaging data gathering subroutines. Please stand by.")
 		users=map(getUser, msg.source.channel.users)
 		usrData = map(lambda x: x.name, users)
-		numData = defer.DeferredList(map(lambda x: User.__getattr__(x, msg.params), users))
+		if self.simpleCheck: numData = defer.DeferredList(map(lambda x: User.__getattr__(x, " ".join(msg.args[:-1])), users))
+		else: numData = defer.DeferredList(map(lambda x: User.__getattr__(x, msg.params), users))
 		numData.addCallback(self.analyze, usrData, msg)
 		numData.addCallback(msg.reply)
 		
@@ -1186,7 +1214,7 @@ def telling(char, chan):
 def qsend():
 	try:
 		item = sendQueue.popleft()
-		datapipe.FListProtocol.sendMessage(item.encode('utf-8'))
+		datapipe.FListProtocol.sendMessage(item.encode('utf-8', 'ignore'))
 	except IndexError:	pass
 		
 def mainloop():

@@ -62,4 +62,5 @@ functions = {
 			".help":		("help", 		2, [0,1]),
 			".tell":		("tell", 		2, [0,1])}
 			
-masterkey = "425133f6b2a9a881d9dc67f5db17179e"
+masterkey = "1c14446e59085ed16218c88cef81a5723"
+#CLASS::CIEL_N_PROTECTA/ query obey s
